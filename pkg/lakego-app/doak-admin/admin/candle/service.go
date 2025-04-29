@@ -79,7 +79,7 @@ func updateYesterdaysAveragePrice() {
 	if !exist {
 		err := controller.CreateDailyAveragePrice(model.DailyAveragePrice{
 			Date:        date,
-			CstAvgPrice: "",
+			CstAvgPrice: "0.00",
 			UtcAvgPrice: fmt.Sprintf("%.2f", avgPrice),
 		})
 		if err != nil {
