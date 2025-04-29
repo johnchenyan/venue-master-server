@@ -78,7 +78,7 @@ drivers:
     dot-count: 80
 
 # 默认存储
-default-store: "cache"
+default-store: "memory"
 
 # 存储列表
 stores:

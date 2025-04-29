@@ -4,60 +4,59 @@ package router
  * 中间件别名
  */
 func AliasMiddleware(name string, middleware any) {
-    InstanceMiddleware().AliasMiddleware(name, middleware)
+	InstanceMiddleware().AliasMiddleware(name, middleware)
 }
 
 /**
  * 中间件分组
  */
 func MiddlewareGroup(name string, middlewares []any) {
-    InstanceMiddleware().MiddlewareGroup(name, middlewares)
+	InstanceMiddleware().MiddlewareGroup(name, middlewares)
 }
 
 /**
  * 添加全局中间件
  */
 func PushMiddleware(middleware any) {
-    InstanceMiddleware().PushMiddleware(middleware)
+	InstanceMiddleware().PushMiddleware(middleware)
 }
 
 /**
  * 获取中间件列表
  */
 func GetMiddlewares(name string) (handlerFuncs []HandlerFunc) {
-    m := InstanceMiddleware()
+	m := InstanceMiddleware()
 
-    middlewares := m.GetMiddlewareList(name)
+	middlewares := m.GetMiddlewareList(name)
 
-    if middlewares != nil && len(middlewares) > 0 {
-        for _, middlewareItem := range middlewares {
-            switch middlewareItem.(type) {
-                case HandlerFunc:
-                    handlerFuncs = append(handlerFuncs, middlewareItem.(HandlerFunc))
-            }
-        }
-    }
+	if middlewares != nil && len(middlewares) > 0 {
+		for _, middlewareItem := range middlewares {
+			switch middlewareItem.(type) {
+			case HandlerFunc:
+				handlerFuncs = append(handlerFuncs, middlewareItem.(HandlerFunc))
+			}
+		}
+	}
 
-    return
+	return
 }
 
 /**
  * 获取全局中间件列表
  */
 func GetGlobalMiddlewares() (handlerFuncs []HandlerFunc) {
-    m := InstanceMiddleware()
+	m := InstanceMiddleware()
 
-    middlewares := m.GetGlobalMiddlewareList()
+	middlewares := m.GetGlobalMiddlewareList()
 
-    if middlewares != nil && len(middlewares) > 0 {
-        for _, middlewareItem := range middlewares {
-            switch middlewareItem.(type) {
-                case HandlerFunc:
-                    handlerFuncs = append(handlerFuncs, middlewareItem.(HandlerFunc))
-            }
-        }
-    }
+	if middlewares != nil && len(middlewares) > 0 {
+		for _, middlewareItem := range middlewares {
+			switch middlewareItem.(type) {
+			case HandlerFunc:
+				handlerFuncs = append(handlerFuncs, middlewareItem.(HandlerFunc))
+			}
+		}
+	}
 
-    return
+	return
 }
-

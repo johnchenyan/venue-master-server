@@ -1,17 +1,17 @@
 package kernel
 
-import(
-    "sync"
+import (
+	"sync"
 
-    "github.com/deatil/lakego-doak/lakego/provider/interfaces"
+	"github.com/deatil/lakego-doak/lakego/provider/interfaces"
 )
 
 type (
-    // 服务提供者接口
-    IServiceProvider = interfaces.ServiceProvider
+	// 服务提供者接口
+	IServiceProvider = interfaces.ServiceProvider
 
-    // 服务提供者函数
-    Provider = func() IServiceProvider
+	// 服务提供者函数
+	Provider = func() IServiceProvider
 )
 
 // 默认
@@ -24,49 +24,49 @@ var defaultRegister = NewRegister()
  * @author deatil
  */
 type Register struct {
-    // 锁定
-    mu sync.RWMutex
+	// 锁定
+	mu sync.RWMutex
 
-    // 服务提供者
-    providers []Provider
+	// 服务提供者
+	providers []Provider
 }
 
 // 构造函数
 func NewRegister() *Register {
-    return &Register{
-        providers: make([]Provider, 0),
-    }
+	return &Register{
+		providers: make([]Provider, 0),
+	}
 }
 
 // 添加服务提供者
 func (this *Register) AddProvider(fn func() any) *Register {
-    this.mu.Lock()
-    defer this.mu.Unlock()
+	this.mu.Lock()
+	defer this.mu.Unlock()
 
-    provider := fn()
+	provider := fn()
 
-    // 判断是否为服务提供者
-    switch p := provider.(type) {
-        case IServiceProvider:
-            this.providers = append(this.providers, func() IServiceProvider {
-                return p
-            })
-    }
+	// 判断是否为服务提供者
+	switch p := provider.(type) {
+	case IServiceProvider:
+		this.providers = append(this.providers, func() IServiceProvider {
+			return p
+		})
+	}
 
-    return this
+	return this
 }
 
 // 添加服务提供者
 func AddProvider(f func() any) *Register {
-    return defaultRegister.AddProvider(f)
+	return defaultRegister.AddProvider(f)
 }
 
 // 获取全部服务提供者
 func (this *Register) GetAllProvider() []Provider {
-    return this.providers
+	return this.providers
 }
 
 // 获取全部服务提供者
 func GetAllProvider() []Provider {
-    return defaultRegister.GetAllProvider()
+	return defaultRegister.GetAllProvider()
 }

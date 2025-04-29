@@ -26,38 +26,39 @@ replace (
 	github.com/deatil/go-sign => ./pkg/lakego-pkg/go-sign
 	github.com/deatil/go-tree => ./pkg/lakego-pkg/go-tree
 	github.com/deatil/go-validator => ./pkg/lakego-pkg/go-validator
-	github.com/deatil/lakego-filesystem => ./pkg/lakego-pkg/lakego-filesystem
-	github.com/deatil/lakego-jwt => ./pkg/lakego-pkg/lakego-jwt
 	github.com/deatil/lakego-doak => ./pkg/lakego-pkg/lakego-doak
 	github.com/deatil/lakego-doak-action-log => ./pkg/lakego-app/doak-action-log
 	github.com/deatil/lakego-doak-admin => ./pkg/lakego-app/doak-admin
-	github.com/deatil/lakego-doak-extension => ./pkg/lakego-app/doak-extension
 	github.com/deatil/lakego-doak-database => ./pkg/lakego-app/doak-database
 	github.com/deatil/lakego-doak-devtool => ./pkg/lakego-app/doak-devtool
+	github.com/deatil/lakego-doak-extension => ./pkg/lakego-app/doak-extension
 	github.com/deatil/lakego-doak-monitor => ./pkg/lakego-app/doak-monitor
 	github.com/deatil/lakego-doak-statics => ./pkg/lakego-app/doak-statics
 	github.com/deatil/lakego-doak-swagger => ./pkg/lakego-app/doak-swagger
+	github.com/deatil/lakego-filesystem => ./pkg/lakego-pkg/lakego-filesystem
+	github.com/deatil/lakego-jwt => ./pkg/lakego-pkg/lakego-jwt
 )
 
 require (
 	app v0.0.3
 	extension v0.0.3
 	github.com/deatil/lakego-doak v1.0.1002
-	github.com/deatil/lakego-doak-admin v1.0.0
-	github.com/deatil/lakego-doak-extension v0.0.3
 	github.com/deatil/lakego-doak-action-log v0.0.3
+	github.com/deatil/lakego-doak-admin v1.0.0
 	github.com/deatil/lakego-doak-database v0.0.3
 	github.com/deatil/lakego-doak-devtool v0.0.3
+	github.com/deatil/lakego-doak-extension v0.0.3
 	github.com/deatil/lakego-doak-monitor v0.0.3
 	github.com/deatil/lakego-doak-statics v0.0.3
 	github.com/deatil/lakego-doak-swagger v0.0.3
 	github.com/swaggo/swag v1.8.12
 )
 
+require github.com/pkg/errors v0.9.1 // indirect
+
 require (
 	github.com/deatil/go-array v1.0.1010 // indirect
-	github.com/deatil/go-crc v1.0.10006 // indirect
-	github.com/deatil/go-crc32 v1.0.10006 // indirect
+	github.com/deatil/go-cryptobin v1.0.2042 // indirect
 	github.com/deatil/go-tree v1.0.1001 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -66,7 +67,6 @@ require (
 	github.com/jonboulle/clockwork v0.4.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
-	github.com/deatil/go-cryptobin v1.0.2042
 	github.com/tklauser/go-sysconf v0.3.11 // indirect
 	github.com/tklauser/numcpus v0.6.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
@@ -84,19 +84,13 @@ require (
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/deatil/go-cmd v0.0.3 // indirect
 	github.com/deatil/go-collection v0.0.0-00010101000000-000000000000 // indirect
-	github.com/deatil/go-crc16 v1.0.10005 // indirect
-	github.com/deatil/go-crc8 v1.0.10005 // indirect
 	github.com/deatil/go-datebin v1.0.1013 // indirect
 	github.com/deatil/go-encoding v1.0.2003 // indirect
 	github.com/deatil/go-event v1.0.1007 // indirect
 	github.com/deatil/go-events v1.0.1007 // indirect
-	github.com/deatil/go-container v1.0.1007 // indirect
-	github.com/deatil/go-exception v1.0.1002 // indirect
 	github.com/deatil/go-filesystem v1.0.6 // indirect
 	github.com/deatil/go-goch v1.0.1006 // indirect
 	github.com/deatil/go-hash v1.0.2005 // indirect
-	github.com/deatil/go-pipeline v1.0.1005 // indirect
-	github.com/deatil/go-sign v1.0.1001 // indirect
 	github.com/deatil/go-validator v0.0.3 // indirect
 	github.com/deatil/lakego-filesystem v1.0.1007 // indirect
 	github.com/deatil/lakego-jwt v1.0.1005 // indirect
@@ -113,7 +107,6 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.12.0 // indirect
-	github.com/go-redis/cache/v8 v8.4.4 // indirect
 	github.com/go-redis/redis/extra/rediscmd/v8 v8.11.5 // indirect
 	github.com/go-redis/redis/extra/redisotel/v8 v8.11.5 // indirect
 	github.com/go-redis/redis/v8 v8.11.5 // indirect
@@ -132,7 +125,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
-	github.com/klauspost/compress v1.16.4 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/leodido/go-urn v1.2.3 // indirect
 	github.com/lestrrat/go-file-rotatelogs v0.0.0-20180223000712-d3151e2a480f // indirect
@@ -160,20 +152,16 @@ require (
 	github.com/swaggo/gin-swagger v1.6.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
-	github.com/vmihailenco/go-tinylfu v0.2.2 // indirect
-	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
-	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.opentelemetry.io/otel v1.14.0 // indirect
 	go.opentelemetry.io/otel/trace v1.14.0 // indirect
 	go.uber.org/dig v1.16.1 // indirect
 	golang.org/x/arch v0.3.0 // indirect
-	golang.org/x/crypto v0.24.0
+	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/image v0.18.0 // indirect
 	golang.org/x/net v0.26.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.21.0 // indirect
-	golang.org/x/term v0.21.0 // indirect
-	golang.org/x/text v0.16.0
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/term v0.27.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/tools v0.22.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

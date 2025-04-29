@@ -9,7 +9,7 @@ connections:
   mysql:
     type: "mysql"
     # 连接配置
-    dsn: "root:123456@tcp(127.0.0.1:3306)/lakego_admin?charset=utf8mb4&parseTime=True&loc=Local"
+    dsn: "root:12345678@tcp(127.0.0.1:3306)/lakego_admin?charset=utf8mb4&parseTime=True&loc=Local"
     # 前缀
     prefix: "lakego_"
     max-idle-conns: 10
