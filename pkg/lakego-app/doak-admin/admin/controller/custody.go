@@ -37,7 +37,7 @@ func (this *Custody) CreateCustodyInfo(ctx *gin.Context) {
 	}
 
 	ci, err := createCustodyInfo(data)
-	if err != nil {
+	if err != nil || ci == nil {
 		this.Error(ctx, "新增托管信息数据失败")
 	}
 
