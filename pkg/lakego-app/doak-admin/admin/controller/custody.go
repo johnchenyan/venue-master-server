@@ -39,6 +39,7 @@ func (this *Custody) CreateCustodyInfo(ctx *gin.Context) {
 	ci, err := createCustodyInfo(data)
 	if err != nil || ci == nil {
 		this.Error(ctx, "新增托管信息数据失败")
+		return
 	}
 
 	// 更新此账号的托管统计
@@ -70,10 +71,12 @@ func (this *Custody) DeleteCustodyInfo(ctx *gin.Context) {
 	// 先删除统计信息
 	if err := deleteCustodyStatistics(custodyInfoId); err != nil {
 		this.Error(ctx, "删除托管统计信息失败")
+		return
 	}
 
 	if err := deleteCustodyInfoById(custodyInfoId); err != nil {
 		this.Error(ctx, "删除托管信息数据失败")
+		return
 	}
 
 	this.Success(ctx, "删除记录成功！")
