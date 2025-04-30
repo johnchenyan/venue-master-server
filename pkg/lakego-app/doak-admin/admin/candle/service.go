@@ -119,10 +119,10 @@ func fetchCandles() ([][]float64, error) {
 }
 
 func updateCandlesToDB(candles [][]float64) {
-	maxTimestamp, err := controller.GetMaxTimestamp()
-	if err != nil {
-		maxTimestamp = time.Now().AddDate(0, 0, -30)
-	}
+	//maxTimestamp, err := controller.GetMaxTimestamp()
+	//if err != nil {
+	//	maxTimestamp = time.Now().AddDate(0, 0, -30)
+	//}
 
 	//reverseSlice(candles)
 
