@@ -124,15 +124,15 @@ func updateCandlesToDB(candles [][]float64) {
 		maxTimestamp = time.Now().AddDate(0, 0, -30)
 	}
 
-	reverseSlice(candles)
+	//reverseSlice(candles)
 
 	for _, candle := range candles {
 		timestamp := time.Unix(int64(candle[0]), 0)
 
 		// 只插入比已存在最大时间戳更早的记录
-		if !maxTimestamp.IsZero() && !timestamp.After(maxTimestamp) {
-			continue
-		}
+		//if !maxTimestamp.IsZero() && !timestamp.After(maxTimestamp) {
+		//	continue
+		//}
 
 		priceLow := fmt.Sprintf("%.2f", candle[1])
 		priceHigh := fmt.Sprintf("%.2f", candle[2])
