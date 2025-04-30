@@ -49,35 +49,37 @@ func updateYesterdaysAveragePrice() {
 	start := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 0, 0, 0, 0, time.UTC)
 	end := start.Add(24 * time.Hour)
 
-	candles, err := controller.GetCandleRange(start, end)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-
-	// 计算昨天的平均收盘价
-	var totalPrice float64
-	var count int
-	for _, candle := range candles {
-		price, err := strconv.ParseFloat(candle.PriceClose, 64)
-		if err != nil {
-			// 转换失败，可选择跳过或记录日志
-			fmt.Println("转换价格失败:", err, "价格:", candle.PriceClose)
-			return
-		}
-		totalPrice += price
-		count++
-	}
-
-	avgPrice := totalPrice / float64(count)
 	date := start.Format("2006-01-02")
 	exist, err := controller.IsDailyAveragePriceExist(date)
 	if err != nil {
 		fmt.Println("查找日期错误：", err.Error())
 		return
 	}
+
 	if !exist {
-		err := controller.CreateDailyAveragePrice(model.DailyAveragePrice{
+		candles, err := controller.GetCandleRange(start, end)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+
+		// 计算昨天的平均收盘价
+		var totalPrice float64
+		var count int
+		for _, candle := range candles {
+			price, err := strconv.ParseFloat(candle.PriceClose, 64)
+			if err != nil {
+				// 转换失败，可选择跳过或记录日志
+				fmt.Println("转换价格失败:", err, "价格:", candle.PriceClose)
+				return
+			}
+			totalPrice += price
+			count++
+		}
+
+		avgPrice := totalPrice / float64(count)
+
+		err = controller.CreateDailyAveragePrice(model.DailyAveragePrice{
 			Date:        date,
 			CstAvgPrice: "0.00",
 			UtcAvgPrice: fmt.Sprintf("%.2f", avgPrice),

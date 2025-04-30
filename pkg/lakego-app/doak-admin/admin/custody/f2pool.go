@@ -37,7 +37,7 @@ type FilterCommentMap struct {
 	FilterMap    map[string]string `json:"filter_map"`
 }
 
-func fetchF2PoolRecv(url string) (*HashRateEntry, error) {
+func fetchF2PoolRecv(url string) ([]*HashRateEntry, error) {
 	newUrl := fmt.Sprintf("%s%s", url, "&currency_code=btc&action=load_payout_history_income")
 
 	method := "GET"
@@ -76,28 +76,34 @@ func fetchF2PoolRecv(url string) (*HashRateEntry, error) {
 		return nil, fmt.Errorf("empty item")
 	}
 
-	timestampStr := apiResp.Data.IncomeData[0].CreatedAt.String()
-	timestamp, err := strconv.ParseFloat(timestampStr, 64)
-	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling JSON: %v", err)
-	}
+	var result []*HashRateEntry
 
-	lastDayTime := time.Unix((int64(timestamp)), 0).Format("2006-01-02")
+	for _, item := range apiResp.Data.IncomeData {
+		timestampStr := item.CreatedAt.String()
+		timestamp, err := strconv.ParseFloat(timestampStr, 64)
+		if err != nil {
+			return nil, fmt.Errorf("error unmarshalling JSON: %v", err)
+		}
 
-	btcRecv := apiResp.Data.IncomeData[0].Amount + apiResp.Data.IncomeData[0].TxFee
+		lastDayTime := time.Unix((int64(timestamp)), 0).Format("2006-01-02")
 
-	hashRate, unit, err := getHashRateString(apiResp.Data.IncomeData[0].HashRate)
-	if err != nil {
-		return nil, fmt.Errorf("error getting hash rate: %v", err)
+		btcRecv := item.Amount + item.TxFee
+
+		hashRate, unit, err := getHashRateString(item.HashRate)
+		if err != nil {
+			return nil, fmt.Errorf("error getting hash rate: %v", err)
+		}
+
+		result = append(result, &HashRateEntry{
+			LastDayHashRate: hashRate,
+			LastDayRecv:     fmt.Sprintf("%.8f", btcRecv),
+			LastDayHashUnit: unit,
+			LastDayTime:     lastDayTime,
+		})
 	}
 
 	//apiResp.OriginData.Summary.HashRate
-	return &HashRateEntry{
-		LastDayHashRate: hashRate,
-		LastDayRecv:     fmt.Sprintf("%.8f", btcRecv),
-		LastDayHashUnit: unit,
-		LastDayTime:     lastDayTime,
-	}, nil
+	return result, nil
 }
 
 func getHashRateString(hashRate interface{}) (string, string, error) {

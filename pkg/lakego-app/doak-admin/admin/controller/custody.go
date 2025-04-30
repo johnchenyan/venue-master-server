@@ -67,6 +67,11 @@ func (this *Custody) DeleteCustodyInfo(ctx *gin.Context) {
 	}
 
 	// 根据记录ID删除对应的删除记录数据
+	// 先删除统计信息
+	if err := deleteCustodyStatistics(custodyInfoId); err != nil {
+		this.Error(ctx, "删除托管统计信息失败")
+	}
+
 	if err := deleteCustodyInfoById(custodyInfoId); err != nil {
 		this.Error(ctx, "删除托管信息数据失败")
 	}
@@ -199,15 +204,25 @@ func CreateCustodyStatistics(data model.CustodyStatistics) error {
 	return model.NewCustodyStatisticsModel().Create(&data).Error
 }
 
+func deleteCustodyStatistics(custodyInfoID string) error {
+	return model.NewCustodyStatisticsModel().Where("custody_id = ?", custodyInfoID).Delete(&model.CustodyStatistics{}).Error
+}
+
 func ListCustodyInfoWithTimeRange(startTime time.Time) (custodyStatistics []model.CustodyStatistics, err error) {
-	println("ListCustodyInfoWithTimeRange:;;;;")
 	if !startTime.IsZero() {
 		// 添加时间过滤条件
 		reportDateStr := startTime.Format("2006-01-02")
 		println("startTime:", reportDateStr)
-		err = model.NewCustodyStatisticsModel().Where("report_date >= ?", reportDateStr).Preload("CustodyInfo").Find(&custodyStatistics).Error
+		err = model.NewCustodyStatisticsModel().
+			Where("report_date >= ?", reportDateStr).
+			Order("report_date DESC"). // 添加降序排序
+			Preload("CustodyInfo").
+			Find(&custodyStatistics).Error
 	} else {
-		err = model.NewCustodyStatisticsModel().Preload("CustodyInfo").Find(&custodyStatistics).Error
+		err = model.NewCustodyStatisticsModel().
+			Order("report_date DESC"). // 添加降序排序
+			Preload("CustodyInfo").
+			Find(&custodyStatistics).Error
 	}
 
 	return custodyStatistics, err
@@ -215,7 +230,7 @@ func ListCustodyInfoWithTimeRange(startTime time.Time) (custodyStatistics []mode
 
 func ListDailyAveragePrice() ([]model.DailyAveragePrice, error) {
 	var dailyAveragePrice []model.DailyAveragePrice
-	err := model.NewDailyAveragePrice().Find(&dailyAveragePrice).Error
+	err := model.NewDailyAveragePrice().Order("date DESC").Find(&dailyAveragePrice).Error
 	if err != nil {
 		return nil, err
 	}

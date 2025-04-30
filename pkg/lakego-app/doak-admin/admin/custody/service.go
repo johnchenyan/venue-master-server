@@ -50,11 +50,23 @@ func Run() {
 }
 
 func collect(custodyInfo model.CustodyInfo) error {
-	hs, err := spider(custodyInfo.ObserverLink)
+	hss, err := spider(custodyInfo.ObserverLink)
 	if err != nil {
 		return xerrors.Errorf("获取数据失败：%s", err.Error())
 	}
 
+	for _, hs := range hss {
+		err := processHashRate(hs, custodyInfo)
+		if err != nil {
+			fmt.Println(time.Now(), "场地:", custodyInfo.VenueName, "子账户:", custodyInfo.SubAccountName, err.Error())
+			continue
+		}
+	}
+
+	return nil
+}
+
+func processHashRate(hs *HashRateEntry, custodyInfo model.CustodyInfo) error {
 	// 计算总能耗
 	energy, err := totalEnergy(*hs, custodyInfo)
 	if err != nil {

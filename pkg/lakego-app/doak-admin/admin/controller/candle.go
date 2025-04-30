@@ -44,3 +44,13 @@ func GetCandleRange(start, end time.Time) ([]model.BtcUsdCandle, error) {
 	}
 	return candles, nil
 }
+
+func CandleList() ([]model.BtcUsdCandle, error) {
+	var candles []model.BtcUsdCandle
+	err := model.NewBtcUsdCandle().
+		Find(&candles).Error
+	if err != nil {
+		return nil, err
+	}
+	return candles, nil
+}

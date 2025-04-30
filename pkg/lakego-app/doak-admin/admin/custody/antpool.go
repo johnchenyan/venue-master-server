@@ -69,7 +69,7 @@ func convertURL(sUrl string) (string, error) {
 	return dUrl, nil
 }
 
-func fetchAntPoolRecv(url string) (*HashRateEntry, error) {
+func fetchAntPoolRecv(url string) ([]*HashRateEntry, error) {
 	// Send a GET request to the URL
 	resp, err := http.Get(url)
 	if err != nil {
@@ -94,18 +94,24 @@ func fetchAntPoolRecv(url string) (*HashRateEntry, error) {
 		return nil, fmt.Errorf("empty item")
 	}
 
-	timestampStr := apiResp.Data.Items[0].CreateDate.String()
-	timestamp, err := strconv.ParseFloat(timestampStr, 64)
-	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling JSON: %v", err)
+	var result []*HashRateEntry
+
+	for _, item := range apiResp.Data.Items {
+		timestampStr := item.CreateDate.String()
+		timestamp, err := strconv.ParseFloat(timestampStr, 64)
+		if err != nil {
+			return nil, fmt.Errorf("error unmarshalling JSON: %v", err)
+		}
+
+		lastDayTime := time.Unix((int64(timestamp))/1000, 0).Format("2006-01-02")
+
+		result = append(result, &HashRateEntry{
+			LastDayHashRate: item.DayHashRate,
+			LastDayHashUnit: item.DayHashRateUnit,
+			LastDayRecv:     item.DayRecv,
+			LastDayTime:     lastDayTime,
+		})
 	}
 
-	lastDayTime := time.Unix((int64(timestamp))/1000, 0).Format("2006-01-02")
-
-	return &HashRateEntry{
-		LastDayHashRate: apiResp.Data.Items[0].DayHashRate,
-		LastDayHashUnit: apiResp.Data.Items[0].DayHashRateUnit,
-		LastDayRecv:     apiResp.Data.Items[0].DayRecv,
-		LastDayTime:     lastDayTime,
-	}, nil
+	return result, nil
 }

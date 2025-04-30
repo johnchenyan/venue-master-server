@@ -141,6 +141,8 @@ func (this *Admin) loadCommand() {
 
 	// 停止 admin 系统服务
 	this.AddCommand(cmd.StopCmd)
+
+	this.AddCommand(cmd.GenerateAveragePriceCmd)
 }
 
 /**
