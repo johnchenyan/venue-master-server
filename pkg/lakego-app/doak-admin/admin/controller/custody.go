@@ -2,8 +2,10 @@ package controller
 
 import (
 	"fmt"
+	"github.com/deatil/lakego-doak-admin/admin/custody_helper"
 	"github.com/deatil/lakego-doak-admin/admin/model"
 	"github.com/gin-gonic/gin"
+	"strconv"
 	"time"
 )
 
@@ -141,7 +143,14 @@ func (this *Custody) ListCustodyStatistics(ctx *gin.Context) {
 		return
 	}
 
-	this.SuccessWithData(ctx, "获取成功", custodyStatistics)
+	// 转换数据，根据当前的能耗比跟基础托管费
+	data, err := tansferData(custodyStatistics)
+	if err != nil {
+		this.Error(ctx, fmt.Sprintf("转换数据失败: %s", err.Error()))
+		return
+	}
+
+	this.SuccessWithData(ctx, "获取成功", data)
 }
 
 func (this *Custody) ListDailyAveragePrice(ctx *gin.Context) {
@@ -239,4 +248,45 @@ func ListDailyAveragePrice() ([]model.DailyAveragePrice, error) {
 	}
 
 	return dailyAveragePrice, nil
+}
+
+func tansferData(data []model.CustodyStatistics) ([]model.CustodyStatistics, error) {
+	var custodyStatistics []model.CustodyStatistics
+
+	for _, cs := range data {
+		if cs.BasicHostingFee == cs.CustodyInfo.BasicHostingFee && cs.EnergyRatio == cs.CustodyInfo.EnergyRatio {
+			custodyStatistics = append(custodyStatistics, cs)
+			continue
+		}
+		cs.EnergyRatio = cs.CustodyInfo.EnergyRatio
+		cs.BasicHostingFee = cs.CustodyInfo.BasicHostingFee
+
+		// 计算总托管费
+		energy, err := custody_helper.TotalEnergy(cs.HourlyComputingPower, "TH/s", cs.CustodyInfo)
+		if err != nil {
+			return nil, err
+		}
+
+		totalHostingFee, err := custody_helper.TotalHostingFee(energy, cs.CustodyInfo)
+		if err != nil {
+			return nil, err
+		}
+
+		cs.TotalHostingFee = fmt.Sprintf("%.2f", totalHostingFee)
+
+		totalIncomeUSD, err := strconv.ParseFloat(cs.TotalIncomeUSD, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		netIncome := totalIncomeUSD - totalHostingFee
+		totalHostingFeeRatio := totalHostingFee / totalIncomeUSD * 100
+
+		cs.NetIncome = fmt.Sprintf("%.2f", netIncome)
+		cs.HostingFeeRatio = fmt.Sprintf("%.2f%%", totalHostingFeeRatio)
+
+		custodyStatistics = append(custodyStatistics, cs)
+	}
+
+	return custodyStatistics, nil
 }

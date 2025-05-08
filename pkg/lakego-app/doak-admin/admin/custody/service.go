@@ -3,9 +3,9 @@ package custody
 import (
 	"fmt"
 	"github.com/deatil/lakego-doak-admin/admin/controller"
+	"github.com/deatil/lakego-doak-admin/admin/custody_helper"
 	"github.com/deatil/lakego-doak-admin/admin/model"
 	"golang.org/x/xerrors"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -68,13 +68,13 @@ func collect(custodyInfo model.CustodyInfo) error {
 
 func processHashRate(hs *HashRateEntry, custodyInfo model.CustodyInfo) error {
 	// 计算总能耗
-	energy, err := totalEnergy(*hs, custodyInfo)
+	energy, err := custody_helper.TotalEnergy(hs.LastDayHashRate, hs.LastDayHashUnit, custodyInfo)
 	if err != nil {
 		return xerrors.Errorf("计算总能耗失败：%s", err.Error())
 	}
 
 	// 计算总的托管费
-	totalHostingFee, err := totalHostingFee(energy, custodyInfo)
+	totalHostingFee, err := custody_helper.TotalHostingFee(energy, custodyInfo)
 	if err != nil {
 		return xerrors.Errorf("计算总托管费失败：%s", err.Error())
 	}
@@ -94,7 +94,7 @@ func processHashRate(hs *HashRateEntry, custodyInfo model.CustodyInfo) error {
 		return xerrors.Errorf("日均价格记录不存在")
 	}
 
-	totalIncomeUSD, err := totalIncomeUSD(hs.LastDayRecv, averagePrice)
+	totalIncomeUSD, err := custody_helper.TotalIncomeUSD(hs.LastDayRecv, averagePrice)
 	if err != nil {
 		return xerrors.Errorf("计算总USD收益失败：%s", err.Error())
 	}
@@ -120,55 +120,6 @@ func processHashRate(hs *HashRateEntry, custodyInfo model.CustodyInfo) error {
 	}
 
 	return nil
-}
-
-func totalEnergy(hs HashRateEntry, custodyInfo model.CustodyInfo) (float64, error) {
-	var value float64
-	hashRate, err := strconv.ParseFloat(hs.LastDayHashRate, 64)
-	if err != nil {
-		return 0, err
-	}
-	switch hs.LastDayHashUnit {
-	case "TH/s":
-		value = hashRate
-	case "PH/s":
-		value = hashRate * 1000
-	case "EH/s":
-		value = hashRate * 1000 * 1000
-	}
-
-	energyRatio, err := strconv.ParseFloat(custodyInfo.EnergyRatio, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	return value * energyRatio * 3600 * 24, nil
-}
-
-func totalHostingFee(energy float64, custodyInfo model.CustodyInfo) (float64, error) {
-	energyKwh := joulesToKWh(energy)
-	basicHostingFee, err := strconv.ParseFloat(custodyInfo.BasicHostingFee, 64)
-	if err != nil {
-		return 0, err
-	}
-	return basicHostingFee * energyKwh, nil
-}
-
-func joulesToKWh(joules float64) float64 {
-	return joules / 3600000
-}
-
-func totalIncomeUSD(incomeBtc, averagePrice string) (float64, error) {
-	incomeBtcFloat, err := strconv.ParseFloat(incomeBtc, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	averagePriceFloat, err := strconv.ParseFloat(averagePrice, 64)
-	if err != nil {
-		return 0, err
-	}
-	return averagePriceFloat * incomeBtcFloat, nil
 }
 
 func convertUTC(link, lastDayTime string) (string, error) {
