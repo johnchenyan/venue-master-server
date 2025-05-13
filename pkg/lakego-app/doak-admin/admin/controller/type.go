@@ -57,3 +57,9 @@ type CustodyInfo struct {
 }
 
 type CustodyInfoUpdate = CustodyInfo
+
+type CustodyHostingFeeCurve struct {
+	Year     string  `json:"year"`
+	Value    float64 `json:"value"`
+	Category string  `json:"category"`
+}

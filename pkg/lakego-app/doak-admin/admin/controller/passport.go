@@ -100,7 +100,7 @@ func (this *Passport) Login(ctx *router.Context) {
 	// 验证密码
 	checkStatus := auth_password.CheckPassword(admin["password"].(string), password, admin["password_salt"].(string))
 	if !checkStatus {
-		//events.DoAction("admin.passport-login.password-error", name)
+		events.DoAction("admin.passport-login.password-error", name)
 
 		this.Error(ctx, "账号或者密码错误", code.LoginError)
 		return
@@ -121,7 +121,7 @@ func (this *Passport) Login(ctx *router.Context) {
 	// 授权 token
 	accessToken, err := jwter.MakeAccessToken(tokenData)
 	if err != nil {
-		events.DoAction("admin.passport-login.make-accesstoken-fail", err.Error())
+		//events.DoAction("admin.passport-login.make-accesstoken-fail", err.Error())
 
 		this.Error(ctx, "授权token生成失败", code.LoginError)
 		return
@@ -130,7 +130,7 @@ func (this *Passport) Login(ctx *router.Context) {
 	// 刷新 token
 	refreshToken, err := jwter.MakeRefreshToken(tokenData)
 	if err != nil {
-		events.DoAction("admin.passport-login.make-refreshtoken-fail", err.Error())
+		//events.DoAction("admin.passport-login.make-refreshtoken-fail", err.Error())
 
 		this.Error(ctx, "刷新token生成失败", code.LoginError)
 		return
@@ -170,7 +170,7 @@ func (this *Passport) RefreshToken(ctx *router.Context) {
 	post := make(map[string]any)
 	this.ShouldBindJSON(ctx, &post)
 
-	events.DoAction("admin.passport-refreshtoken.start", post)
+	//events.DoAction("admin.passport-refreshtoken.start", post)
 
 	var refreshToken any
 	var ok bool
@@ -206,7 +206,7 @@ func (this *Passport) RefreshToken(ctx *router.Context) {
 	// 授权 token
 	accessToken, err := jwter.MakeAccessToken(tokenData)
 	if err != nil {
-		events.DoAction("admin.passport-refreshtoken.make-accesstoken-fail", err.Error())
+		//events.DoAction("admin.passport-refreshtoken.make-accesstoken-fail", err.Error())
 
 		this.Error(ctx, "生成 access_token 失败", code.JwtRefreshTokenFail)
 		return

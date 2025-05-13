@@ -6,6 +6,7 @@ import (
 	"github.com/deatil/lakego-doak-admin/admin/model"
 	"github.com/gin-gonic/gin"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -144,13 +145,36 @@ func (this *Custody) ListCustodyStatistics(ctx *gin.Context) {
 	}
 
 	// 转换数据，根据当前的能耗比跟基础托管费
-	data, err := tansferData(custodyStatistics)
+	data, err := transferData(custodyStatistics)
 	if err != nil {
 		this.Error(ctx, fmt.Sprintf("转换数据失败: %s", err.Error()))
 		return
 	}
 
 	this.SuccessWithData(ctx, "获取成功", data)
+}
+
+func (this *Custody) ListHostingFeeRatio(ctx *gin.Context) {
+	custodyStatistics, err := ListCustodyInfoWithTimeRange(time.Time{})
+	if err != nil {
+		this.Error(ctx, fmt.Sprintf("获取托管统计失败: %s", err.Error()))
+		return
+	}
+
+	// 转换数据，根据当前的能耗比跟基础托管费
+	data, err := transferData(custodyStatistics)
+	if err != nil {
+		this.Error(ctx, fmt.Sprintf("转换数据失败: %s", err.Error()))
+		return
+	}
+
+	// 转换成托管费占比曲线图对应数据
+	curve, err := transferHostingRatioForCurve(data)
+	if err != nil {
+		this.Error(ctx, fmt.Sprintf("转换数据失败: %s", err.Error()))
+	}
+
+	this.SuccessWithData(ctx, "获取成功", curve)
 }
 
 func (this *Custody) ListDailyAveragePrice(ctx *gin.Context) {
@@ -250,7 +274,7 @@ func ListDailyAveragePrice() ([]model.DailyAveragePrice, error) {
 	return dailyAveragePrice, nil
 }
 
-func tansferData(data []model.CustodyStatistics) ([]model.CustodyStatistics, error) {
+func transferData(data []model.CustodyStatistics) ([]model.CustodyStatistics, error) {
 	var custodyStatistics []model.CustodyStatistics
 
 	for _, cs := range data {
@@ -289,4 +313,22 @@ func tansferData(data []model.CustodyStatistics) ([]model.CustodyStatistics, err
 	}
 
 	return custodyStatistics, nil
+}
+
+func transferHostingRatioForCurve(data []model.CustodyStatistics) ([]CustodyHostingFeeCurve, error) {
+	var result []CustodyHostingFeeCurve
+	for i := len(data) - 1; i >= 0; i-- {
+		cs := data[i]
+		hostingFeeRatio, err := strconv.ParseFloat(strings.ReplaceAll(cs.HostingFeeRatio, "%", ""), 64)
+		if err != nil {
+			continue
+		}
+		result = append(result, CustodyHostingFeeCurve{
+			Year:     cs.ReportDate,
+			Value:    hostingFeeRatio,
+			Category: cs.CustodyInfo.SubAccountName,
+		})
+	}
+
+	return result, nil
 }

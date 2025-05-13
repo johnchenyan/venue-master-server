@@ -183,4 +183,7 @@ func CustodyRoutes(engine router.IRouter) {
 
 	// 获取价格信息
 	engine.GET("/custody/dailyAveragePriceList", CustodyController.ListDailyAveragePrice)
+
+	// 获取托管费曲线图数据
+	engine.GET("/custody/hostingFeeRatioList", CustodyController.ListHostingFeeRatio)
 }
