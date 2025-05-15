@@ -1,4 +1,6 @@
-go 1.20
+go 1.23.0
+
+toolchain go1.23.4
 
 use (
 	./
@@ -15,6 +17,7 @@ use (
 	./pkg/lakego-pkg/go-array
 	./pkg/lakego-pkg/go-cmd
 	./pkg/lakego-pkg/go-collection
+	./pkg/lakego-pkg/go-container
 	./pkg/lakego-pkg/go-crc
 	./pkg/lakego-pkg/go-crc16
 	./pkg/lakego-pkg/go-crc32
@@ -24,7 +27,6 @@ use (
 	./pkg/lakego-pkg/go-encoding
 	./pkg/lakego-pkg/go-event
 	./pkg/lakego-pkg/go-events
-	./pkg/lakego-pkg/go-container
 	./pkg/lakego-pkg/go-exception
 	./pkg/lakego-pkg/go-filesystem
 	./pkg/lakego-pkg/go-goch
@@ -37,4 +39,3 @@ use (
 	./pkg/lakego-pkg/lakego-filesystem
 	./pkg/lakego-pkg/lakego-jwt
 )
-

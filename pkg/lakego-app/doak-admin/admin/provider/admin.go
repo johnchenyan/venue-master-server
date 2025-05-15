@@ -143,6 +143,8 @@ func (this *Admin) loadCommand() {
 	this.AddCommand(cmd.StopCmd)
 
 	this.AddCommand(cmd.GenerateAveragePriceCmd)
+
+	this.AddCommand(cmd.ImportDataToSqlCmd)
 }
 
 /**

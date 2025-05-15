@@ -69,6 +69,8 @@ func Route(engine router.IRouter) {
 
 	// 设置托管相关路由
 	CustodyRoutes(engine)
+
+	SettlementRoutes(engine)
 }
 
 /**
@@ -186,4 +188,12 @@ func CustodyRoutes(engine router.IRouter) {
 
 	// 获取托管费曲线图数据
 	engine.GET("/custody/hostingFeeRatioList", CustodyController.ListHostingFeeRatio)
+}
+
+func SettlementRoutes(engine router.IRouter) {
+	SettlementController := new(controller.Settlement)
+
+	engine.POST("/settlement/findSettlementData", SettlementController.FindSettlementData)
+
+	engine.GET("/settlement/settlementPointList", SettlementController.SettlementPointList)
 }

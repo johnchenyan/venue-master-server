@@ -63,3 +63,24 @@ type CustodyHostingFeeCurve struct {
 	Value    float64 `json:"value"`
 	Category string  `json:"category"`
 }
+
+type SettlementQueryParam struct {
+	NameMap   map[string][]string `json:"name"`
+	StartTime string              `json:"start"`
+	EndTime   string              `json:"end"`
+}
+
+type SettlementQueryResult struct {
+	Name       string `json:"name"`
+	Type       string `json:"type"`
+	TimeRange  string `json:"time_range"`
+	TimeLength string `json:"time_length"` // 分钟
+}
+
+//
+//type SettlementQueryEntry struct {
+//	Name       string `json:"name"`
+//	Type       string `json:"start"`
+//	TimeRange  string `json:"time_range"`
+//	TimeLength string `json:"time_length"` // 分钟
+//}
