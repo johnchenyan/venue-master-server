@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/deatil/lakego-doak-admin/admin/model"
 	"github.com/gin-gonic/gin"
+	"math"
 	"sort"
 	"time"
 )
@@ -201,6 +202,7 @@ func calculateAverageElectricityPrice(data []model.SettlementData) float64 {
 	}
 
 	average := total / float64(len(data))
+	average = math.Round(average*100) / 100 // 保留两位小数
 	return average
 }
 
