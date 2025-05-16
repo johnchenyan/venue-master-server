@@ -77,6 +77,13 @@ type SettlementQueryResult struct {
 	TimeLength string `json:"time_length"` // 分钟
 }
 
+type SettlementQueryAverageResult struct {
+	Name      string  `json:"name"`
+	Type      string  `json:"type"`
+	TimeRange string  `json:"time_range"`
+	Average   float64 `json:"average"`
+}
+
 //
 //type SettlementQueryEntry struct {
 //	Name       string `json:"name"`

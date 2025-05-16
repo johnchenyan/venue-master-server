@@ -19,8 +19,6 @@ func (this *Settlement) FindSettlementData(ctx *gin.Context) {
 		return
 	}
 
-	fmt.Println(data)
-
 	// 转换 StartTime 和 EndTime 为 time.Time 类型
 	startTime, err := time.Parse("2006-01-02", data.StartTime)
 	if err != nil {
@@ -38,7 +36,7 @@ func (this *Settlement) FindSettlementData(ctx *gin.Context) {
 
 	for name, typs := range data.NameMap {
 		for _, typ := range typs {
-			settlementData, err := querySettlementData(name, typ, startTime, endTime)
+			settlementData, err := querySettlementLimitData(name, typ, startTime, endTime)
 			if err != nil {
 				fmt.Printf("查询错误：%v\n", err)
 				continue
@@ -66,6 +64,51 @@ func (this *Settlement) SettlementPointList(ctx *gin.Context) {
 	this.SuccessWithData(ctx, "获取成功", pointsMap)
 }
 
+func (this *Settlement) FindSettlementAverage(ctx *gin.Context) {
+	var data SettlementQueryParam
+	if err := this.ShouldBindJSON(ctx, &data); err != nil {
+		this.Error(ctx, "请求数据不正确")
+		return
+	}
+
+	// 转换 StartTime 和 EndTime 为 time.Time 类型
+	startTime, err := time.Parse("2006-01-02", data.StartTime)
+	if err != nil {
+		this.Error(ctx, "EndTime 转换错误")
+		return
+	}
+
+	endTime, err := time.Parse("2006-01-02", data.EndTime)
+	if err != nil {
+		this.Error(ctx, "EndTime 转换错误")
+		return
+	}
+
+	var results []SettlementQueryAverageResult
+
+	timeRange := fmt.Sprintf("%s 至 %s", startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
+
+	for name, typs := range data.NameMap {
+		for _, typ := range typs {
+			settlementData, err := querySettlementData(name, typ, startTime, endTime)
+			if err != nil {
+				fmt.Printf("查询错误：%v\n", err)
+				continue
+			}
+
+			averagePrice := calculateAverageElectricityPrice(settlementData)
+			results = append(results, SettlementQueryAverageResult{
+				name,
+				typ,
+				timeRange,
+				averagePrice,
+			})
+		}
+	}
+
+	this.SuccessWithData(ctx, "获取成功", results)
+}
+
 func CreateSettlementData(data model.SettlementData) error {
 	return model.NewSettlementData().Create(&data).Error
 }
@@ -74,9 +117,16 @@ func CreateSettlementPoint(data model.SettlementPoint) error {
 	return model.NewSettlementPoint().Create(&data).Error
 }
 
-func querySettlementData(name string, typ string, startDate time.Time, endDate time.Time) ([]model.SettlementData, error) {
+func querySettlementLimitData(name string, typ string, startDate time.Time, endDate time.Time) ([]model.SettlementData, error) {
 	var results []model.SettlementData
 	err := model.NewSettlementData().Where("settlement_point_name = ? AND settlement_point_type = ? AND delivery_date BETWEEN ? AND ? AND settlement_point_price > ?",
+		name, typ, startDate, endDate, 7.5).Find(&results).Error
+	return results, err
+}
+
+func querySettlementData(name string, typ string, startDate time.Time, endDate time.Time) ([]model.SettlementData, error) {
+	var results []model.SettlementData
+	err := model.NewSettlementData().Where("settlement_point_name = ? AND settlement_point_type = ? AND delivery_date BETWEEN ? AND ? AND settlement_point_price <= ?",
 		name, typ, startDate, endDate, 7.5).Find(&results).Error
 	return results, err
 }
@@ -122,7 +172,7 @@ func processSettlementData(data []model.SettlementData) []SettlementQueryResult 
 		}
 
 		// 记录合并后的结果
-		timeRange := fmt.Sprintf("%s - %s", startTime.Format("2006-01-02 15:04"), endTime.Add(15*time.Minute).Format("2006-01-02 15:04"))
+		timeRange := fmt.Sprintf("%s 至 %s", startTime.Format("2006-01-02 15:04"), endTime.Add(15*time.Minute).Format("2006-01-02 15:04"))
 		timeLength := int(endTime.Sub(startTime).Minutes()) + 15
 
 		results = append(results, SettlementQueryResult{
@@ -138,6 +188,20 @@ func processSettlementData(data []model.SettlementData) []SettlementQueryResult 
 	}
 
 	return results
+}
+
+func calculateAverageElectricityPrice(data []model.SettlementData) float64 {
+	if len(data) == 0 {
+		return 0 // 防止除以零
+	}
+
+	total := 0.0
+	for _, settlement := range data {
+		total += settlement.SettlementPointPrice
+	}
+
+	average := total / float64(len(data))
+	return average
 }
 
 // 计算实际的时间
