@@ -20,3 +20,19 @@ func (s *SettlementPoint) TableName() string {
 func NewSettlementPoint() *gorm.DB {
 	return NewDB().Model(&SettlementPoint{})
 }
+
+type SettlementPointT struct {
+	SettlementPointID   uint   `gorm:"column:settlement_point_id;primaryKey;autoIncrement" json:"settlement_point_id"`      // 结算点唯一标识
+	SettlementPointName string `gorm:"column:settlement_point_name;type:varchar(20);not null" json:"settlement_point_name"` // 结算点名称
+}
+
+// TableName 设置表名，带前缀
+func (s *SettlementPointT) TableName() string {
+	prefix := GetConfig("prefix").(string) // 获取配置中的前缀
+	return prefix + "settlement_points_t"  // 更改为实际表名
+}
+
+// 新建模型实例（可选）
+func NewSettlementPointT() *gorm.DB {
+	return NewDB().Model(&SettlementPointT{})
+}

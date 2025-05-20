@@ -178,22 +178,40 @@
 
 
 
-CREATE TABLE `pre__settlement_data` (
-                                   `settlement_point_name` VARCHAR(20) NOT NULL,                        -- 结算点名称 (最大20个字符)
-                                   `settlement_point_type` VARCHAR(20) NOT NULL,                        -- 结算点类型 (最大20个字符)
-                                   `delivery_date` DATE NOT NULL,                                         -- 交付日期
-                                   `delivery_hour` TINYINT NOT NULL,                                    -- 交付小时 (0-99)
-                                   `delivery_interval` TINYINT NOT NULL,                                -- 交付间隔 (0-99)
-                                   `settlement_point_price` FLOAT NOT NULL,                             -- 结算点价格
-                                   INDEX idx_settlement (`settlement_point_name`, `settlement_point_type`, `delivery_date`, `settlement_point_price`),  -- 联合索引
-                                   INDEX idx_price (`settlement_point_price`)                           -- 单列索引
+# CREATE TABLE `pre__settlement_data` (
+#                                    `settlement_point_name` VARCHAR(20) NOT NULL,                        -- 结算点名称 (最大20个字符)
+#                                    `settlement_point_type` VARCHAR(20) NOT NULL,                        -- 结算点类型 (最大20个字符)
+#                                    `delivery_date` DATE NOT NULL,                                         -- 交付日期
+#                                    `delivery_hour` TINYINT NOT NULL,                                    -- 交付小时 (0-99)
+#                                    `delivery_interval` TINYINT NOT NULL,                                -- 交付间隔 (0-99)
+#                                    `settlement_point_price` FLOAT NOT NULL,                             -- 结算点价格
+#                                    INDEX idx_settlement (`settlement_point_name`, `settlement_point_type`, `delivery_date`, `settlement_point_price`),  -- 联合索引
+#                                    INDEX idx_price (`settlement_point_price`)                           -- 单列索引
+# ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+#
+#
+#
+# CREATE TABLE `pre__settlement_points` (
+#                                      `settlement_point_id` INT AUTO_INCREMENT PRIMARY KEY,               -- 结算点唯一标识
+#                                      `settlement_point_name` VARCHAR(20) NOT NULL,                      -- 结算点名称 (最大20个字符)
+#                                      `settlement_point_type` VARCHAR(20) NOT NULL,                      -- 结算点类型 (最大20个字符)
+#                                      UNIQUE KEY `unique_settlement_point` (`settlement_point_name`, `settlement_point_type`)  -- 复合唯一索引
+# ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE `pre__settlement_data_t` (
+                                        `settlement_point_name` VARCHAR(20) NOT NULL,                        -- 结算点名称 (最大20个字符)
+                                        `delivery_date` DATE NOT NULL,                                         -- 交付日期
+                                        `delivery_hour` TINYINT NOT NULL,                                    -- 交付小时 (0-99)
+                                        `settlement_point_price` FLOAT NOT NULL,                             -- 结算点价格
+                                        INDEX idx_settlement (`settlement_point_name`, `delivery_date`, `settlement_point_price`),  -- 联合索引
+                                        INDEX idx_price (`settlement_point_price`)                           -- 单列索引
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 
-CREATE TABLE `pre__settlement_points` (
-                                     `settlement_point_id` INT AUTO_INCREMENT PRIMARY KEY,               -- 结算点唯一标识
-                                     `settlement_point_name` VARCHAR(20) NOT NULL,                      -- 结算点名称 (最大20个字符)
-                                     `settlement_point_type` VARCHAR(20) NOT NULL,                      -- 结算点类型 (最大20个字符)
-                                     UNIQUE KEY `unique_settlement_point` (`settlement_point_name`, `settlement_point_type`)  -- 复合唯一索引
+CREATE TABLE `pre__settlement_points_t` (
+                                          `settlement_point_id` INT AUTO_INCREMENT PRIMARY KEY,               -- 结算点唯一标识
+                                          `settlement_point_name` VARCHAR(20) NOT NULL,                      -- 结算点名称 (最大20个字符)
+                                          UNIQUE KEY `unique_settlement_point` (`settlement_point_name`)  -- 复合唯一索引
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
