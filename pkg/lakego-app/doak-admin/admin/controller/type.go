@@ -71,6 +71,31 @@ type SettlementQueryParam struct {
 	EndTime   string              `json:"end"`
 }
 
+type SettlementQueryWithPaginationParam struct {
+	Type      string              `json:"type"`
+	NameMap   map[string][]string `json:"name"`
+	StartTime string              `json:"start"`
+	EndTime   string              `json:"end"`
+	Price     string              `json:"price"`
+	Page      int                 `json:"page"`      // 当前页码
+	PageSize  int                 `json:"page_size"` // 每页条目数
+}
+
+type SettlementQueryWithPaginationResult struct {
+	Data     []SettlementItem `json:"data"`      // 查询结果数据列表
+	Total    int64            `json:"total"`     // 数据总条目数
+	Page     int              `json:"page"`      // 当前页码
+	PageSize int              `json:"page_size"` // 每页条目数
+}
+
+// SettlementItem 表示单个条目的结构体
+type SettlementItem struct {
+	Name  string  `json:"name"`
+	Type  string  `json:"type"`
+	Time  string  `json:"time"`
+	Price float64 `json:"price"`
+}
+
 type SettlementQueryResult struct {
 	Name       string `json:"name"`
 	Type       string `json:"type"`

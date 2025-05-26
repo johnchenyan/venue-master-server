@@ -95,6 +95,7 @@ func fetchAntPoolRecv(url string) ([]*HashRateEntry, error) {
 	}
 
 	var result []*HashRateEntry
+	recvMap := make(map[string]*HashRateEntry) // 用于存储每个日期对应的信息
 
 	for _, item := range apiResp.Data.Items {
 		timestampStr := item.CreateDate.String()
@@ -105,12 +106,39 @@ func fetchAntPoolRecv(url string) ([]*HashRateEntry, error) {
 
 		lastDayTime := time.Unix((int64(timestamp))/1000, 0).Format("2006-01-02")
 
-		result = append(result, &HashRateEntry{
-			LastDayHashRate: item.DayHashRate,
-			LastDayHashUnit: item.DayHashRateUnit,
-			LastDayRecv:     item.DayRecv,
-			LastDayTime:     lastDayTime,
-		})
+		//result = append(result, &HashRateEntry{
+		//	LastDayHashRate: item.DayHashRate,
+		//	LastDayHashUnit: item.DayHashRateUnit,
+		//	LastDayRecv:     item.DayRecv,
+		//	LastDayTime:     lastDayTime,
+		//})
+
+		// 将 DayRecv 从字符串转换为 float64
+		dayRecvValue, err := strconv.ParseFloat(item.DayRecv, 64)
+		if err != nil {
+			return nil, fmt.Errorf("error converting DayRecv to float64: %v", err)
+		}
+
+		// 检查该日期是否已经存在于 map 中
+		if entry, exists := recvMap[lastDayTime]; exists {
+			// 累加 DayRecv 值并转换为字符串
+			currentRecv, _ := strconv.ParseFloat(entry.LastDayRecv, 64)
+			newTotalRecv := currentRecv + dayRecvValue
+			entry.LastDayRecv = fmt.Sprintf("%.8f", newTotalRecv) // 转换为字符串并保留两位小数
+		} else {
+			// 如果不存在，创建新的 HashRateEntry 记录
+			recvMap[lastDayTime] = &HashRateEntry{
+				LastDayHashRate: item.DayHashRate,
+				LastDayHashUnit: item.DayHashRateUnit,
+				LastDayRecv:     item.DayRecv, // 初始值直接使用 DayRecv 字符串
+				LastDayTime:     lastDayTime,
+			}
+		}
+
+		// 构建结果列表
+		for _, entry := range recvMap {
+			result = append(result, entry)
+		}
 	}
 
 	return result, nil

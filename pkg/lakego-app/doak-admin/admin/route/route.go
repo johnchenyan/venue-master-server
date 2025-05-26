@@ -195,7 +195,11 @@ func SettlementRoutes(engine router.IRouter) {
 
 	engine.POST("/settlement/findSettlementData", SettlementController.FindSettlementData)
 
+	engine.POST("/settlement/findSettlementDataWithPagination", SettlementController.FindSettlementDataWithPagination)
+
 	engine.POST("/settlement/findSettlementAverage", SettlementController.FindSettlementAverage)
 
 	engine.GET("/settlement/settlementPointList/:type", SettlementController.SettlementPointList)
+
+	engine.POST("/settlement/downloadSettlementData", SettlementController.DownLoadSettlementData)
 }
