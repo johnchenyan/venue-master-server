@@ -71,6 +71,8 @@ func Route(engine router.IRouter) {
 	CustodyRoutes(engine)
 
 	SettlementRoutes(engine)
+
+	BTCMiningPoolRoutes(engine)
 }
 
 /**
@@ -202,4 +204,16 @@ func SettlementRoutes(engine router.IRouter) {
 	engine.GET("/settlement/settlementPointList/:type", SettlementController.SettlementPointList)
 
 	engine.POST("/settlement/downloadSettlementData", SettlementController.DownLoadSettlementData)
+}
+
+func BTCMiningPoolRoutes(engine router.IRouter) {
+	btcMiningPoolController := new(controller.BtcMiningPool)
+
+	engine.GET("/miningPool/listBtcMiningPool/:poolType/:poolCategory", btcMiningPoolController.ListBtcMiningPool)
+
+	engine.POST("/miningPool/createBtcMiningPool", btcMiningPoolController.CreateBtcMiningPool)
+
+	engine.POST("/miningPool/updateBtcMiningPool", btcMiningPoolController.UpdateBtcMiningPool)
+
+	engine.GET("/miningPool/listBtcMiningPoolHashRate/:poolType/:poolCategory", btcMiningPoolController.ListBtcMiningPoolHashRate)
 }

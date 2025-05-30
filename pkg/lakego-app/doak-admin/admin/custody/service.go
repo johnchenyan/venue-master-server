@@ -5,6 +5,7 @@ import (
 	"github.com/deatil/lakego-doak-admin/admin/controller"
 	"github.com/deatil/lakego-doak-admin/admin/custody_helper"
 	"github.com/deatil/lakego-doak-admin/admin/model"
+	"github.com/deatil/lakego-doak-admin/admin/pool"
 	"golang.org/x/xerrors"
 	"strings"
 	"time"
@@ -50,7 +51,7 @@ func Run() {
 }
 
 func collect(custodyInfo model.CustodyInfo) error {
-	hss, err := spider(custodyInfo.ObserverLink)
+	hss, err := pool.SpiderBTCProfit(custodyInfo.ObserverLink)
 	if err != nil {
 		return xerrors.Errorf("获取数据失败：%s", err.Error())
 	}
@@ -66,7 +67,7 @@ func collect(custodyInfo model.CustodyInfo) error {
 	return nil
 }
 
-func processHashRate(hs *HashRateEntry, custodyInfo model.CustodyInfo) error {
+func processHashRate(hs *pool.HashRateEntry, custodyInfo model.CustodyInfo) error {
 	// 计算总能耗
 	energy, err := custody_helper.TotalEnergy(hs.LastDayHashRate, hs.LastDayHashUnit, custodyInfo)
 	if err != nil {

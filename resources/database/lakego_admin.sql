@@ -199,19 +199,56 @@
 # ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
-CREATE TABLE `pre__settlement_data_t` (
-                                        `settlement_point_name` VARCHAR(20) NOT NULL,                        -- 结算点名称 (最大20个字符)
-                                        `delivery_date` DATE NOT NULL,                                         -- 交付日期
-                                        `delivery_hour` TINYINT NOT NULL,                                    -- 交付小时 (0-99)
-                                        `settlement_point_price` FLOAT NOT NULL,                             -- 结算点价格
-                                        INDEX idx_settlement (`settlement_point_name`, `delivery_date`, `settlement_point_price`),  -- 联合索引
-                                        INDEX idx_price (`settlement_point_price`)                           -- 单列索引
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+# CREATE TABLE `pre__settlement_data_t` (
+#                                         `settlement_point_name` VARCHAR(20) NOT NULL,                        -- 结算点名称 (最大20个字符)
+#                                         `delivery_date` DATE NOT NULL,                                         -- 交付日期
+#                                         `delivery_hour` TINYINT NOT NULL,                                    -- 交付小时 (0-99)
+#                                         `settlement_point_price` FLOAT NOT NULL,                             -- 结算点价格
+#                                         INDEX idx_settlement (`settlement_point_name`, `delivery_date`, `settlement_point_price`),  -- 联合索引
+#                                         INDEX idx_price (`settlement_point_price`)                           -- 单列索引
+# ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+#
+#
+#
+# CREATE TABLE `pre__settlement_points_t` (
+#                                           `settlement_point_id` INT AUTO_INCREMENT PRIMARY KEY,               -- 结算点唯一标识
+#                                           `settlement_point_name` VARCHAR(20) NOT NULL,                      -- 结算点名称 (最大20个字符)
+#                                           UNIQUE KEY `unique_settlement_point` (`settlement_point_name`)  -- 复合唯一索引
+# ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+CREATE TABLE pre__mining_pools (
+                              id INT AUTO_INCREMENT PRIMARY KEY,  -- 主键，自增ID
+                              pool_type ENUM('NS', 'CANG') NOT NULL,  -- 矿池类型
+                              pool_category ENUM('主矿池', '备用矿池') NOT NULL, -- 矿池类别
+                              pool_name VARCHAR(255) NOT NULL,  -- 账户名
+                              theoretical_hashrate DECIMAL(10, 2),  -- 理论算力
+                              link VARCHAR(255),                     -- 链接
+                              `sort_order` INT DEFAULT 0,                                  -- 排序字段，默认为0
+                              `is_enabled` TINYINT(1) DEFAULT 1,                           -- 启用状态，默认为1（启用）
+                              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- 更新时间
+                              UNIQUE KEY unique_pool (pool_type, pool_category, pool_name) -- 唯一索引，确保组合独一无二
+);
 
-CREATE TABLE `pre__settlement_points_t` (
-                                          `settlement_point_id` INT AUTO_INCREMENT PRIMARY KEY,               -- 结算点唯一标识
-                                          `settlement_point_name` VARCHAR(20) NOT NULL,                      -- 结算点名称 (最大20个字符)
-                                          UNIQUE KEY `unique_settlement_point` (`settlement_point_name`)  -- 复合唯一索引
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE pre__mining_settlement_records (
+                                         id INT AUTO_INCREMENT PRIMARY KEY,                -- 主键，自增ID
+                                         pool_id INT NOT NULL,                              -- 外键，关联到 pre__mining_pools 表的 id
+                                         settlement_date VARCHAR(30) NOT NULL,                     -- 结算日期
+                                         settlement_hashrate DECIMAL(15, 2) NOT NULL,      -- 结算算力
+                                         settlement_profit_btc DECIMAL(15, 8) NOT NULL,    -- 结算收益 BTC
+                                         settlement_profit_fb DECIMAL(15, 8) NOT NULL,   -- 结算算力 FB
+                                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,    -- 创建时间
+                                         FOREIGN KEY (pool_id) REFERENCES pre__mining_pools(id), -- 关联外键，确保 pool_id 存在于 pre__mining_pools 表
+                                         UNIQUE KEY unique_pool_date (pool_id, settlement_date)     -- 唯一索引，确保 pool_id 和 created_at 的组合独一无二
+);
+
+CREATE TABLE pre__mining_pool_status (
+                                         id INT AUTO_INCREMENT PRIMARY KEY,                    -- 主键，自增ID
+                                         pool_id INT NOT NULL,                                  -- 外键，关联到 pre__mining_pools 表的 id
+                                         current_hashrate DECIMAL(30, 2) NOT NULL,            -- 实时算力
+                                         online_machines INT NOT NULL,                          -- 实时在线机器数
+                                         offline_machines INT NOT NULL,                         -- 离线机器数
+                                         last_24h_hashrate DECIMAL(30, 2) NOT NULL,           -- 24小时算力
+                                         last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,      -- 最后更新时间
+                                         FOREIGN KEY (pool_id) REFERENCES pre__mining_pools(id) -- 关联外键，确保 pool_id 存在于 pre__mining_pools 表
+);

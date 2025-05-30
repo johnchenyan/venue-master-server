@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/deatil/lakego-doak-admin/admin/candle"
 	"github.com/deatil/lakego-doak-admin/admin/custody"
+	"github.com/deatil/lakego-doak-admin/admin/mining"
 	admin_route "github.com/deatil/lakego-doak-admin/admin/route"
 	"os"
 
@@ -100,6 +101,7 @@ func (this *Admin) Boot() {
 
 	go custody.Run()
 	go candle.Run()
+	go mining.Run()
 }
 
 /**

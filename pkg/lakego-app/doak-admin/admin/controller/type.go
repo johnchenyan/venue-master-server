@@ -64,6 +64,7 @@ type CustodyHostingFeeCurve struct {
 	Category string  `json:"category"`
 }
 
+// 电力价格相关数据结构
 type SettlementQueryParam struct {
 	Type      string              `json:"type"`
 	NameMap   map[string][]string `json:"name"`
@@ -122,10 +123,27 @@ type SettlementQueryAverageResultT struct {
 	Average   float64 `json:"average"`
 }
 
-//
-//type SettlementQueryEntry struct {
-//	Name       string `json:"name"`
-//	Type       string `json:"start"`
-//	TimeRange  string `json:"time_range"`
-//	TimeLength string `json:"time_length"` // 分钟
-//}
+// btc mining pool
+type BtcMiningPoolParam struct {
+	ID                  uint   `json:"ID"`
+	PoolName            string `json:"pool_name"`
+	PoolType            string `json:"pool_type"`
+	PoolCategory        string `json:"pool_category"`
+	TheoreticalHashrate string `json:"theoretical_hashrate"`
+	Link                string `json:"link"`
+}
+
+type BtcMiningPoolHashResult struct {
+	PoolName                string  `json:"pool_name"`
+	CurrentHashRate         string  `json:"current_hash"`
+	Online                  int     `json:"online"`
+	Offline                 int     `json:"offline"`
+	LastHashRate            string  `json:"last_hash"`
+	TheoreticalHashRate     string  `json:"theoretical"`
+	LastHashRateEffective   string  `json:"last_hash_rate_effective"`
+	LastSettlementProfitBtc float64 `json:"last_settlement_profit_btc"`
+	LastSettlementProfitFB  float64 `json:"last_settlement_profit_fb"`
+	LastSettlementDate      string  `json:"last_settlement_date"`
+	UpdateTime              string  `json:"update_time"`
+	Link                    string  `json:"link"`
+}
