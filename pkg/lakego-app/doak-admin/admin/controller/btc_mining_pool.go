@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/deatil/lakego-doak-admin/admin/model"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/xerrors"
 	"gorm.io/gorm"
+	"math"
 	"strconv"
 	"time"
 )
@@ -63,9 +65,23 @@ func (this *BtcMiningPool) CreateBtcMiningPool(ctx *gin.Context) {
 		return
 	}
 
+	// 如果是备用矿池，找到对应的主矿池则添加，没有则报错
+	if data.PoolCategory == "备用矿池" {
+		exist, err := IsMasterPoolExist(data.PoolType, data.PoolName)
+		if err != nil {
+			this.Error(ctx, "查找对应的主矿池失败")
+			return
+		}
+		if !exist {
+			this.Error(ctx, "对应的主矿池不存在，请添加！")
+			return
+		}
+	}
+
 	bp, err := createBtcMiningPool(model.MiningPool{
 		PoolName:            data.PoolName,
 		PoolType:            data.PoolType,
+		Country:             data.Country,
 		PoolCategory:        data.PoolCategory,
 		TheoreticalHashrate: hr,
 		Link:                data.Link,
@@ -101,8 +117,6 @@ func (this *BtcMiningPool) CreateBtcMiningPool(ctx *gin.Context) {
 		this.Error(ctx, "请求超时")
 		return
 	}
-
-	this.Success(ctx, "新增矿池成功！")
 }
 
 func (this *BtcMiningPool) UpdateBtcMiningPool(ctx *gin.Context) {
@@ -118,10 +132,24 @@ func (this *BtcMiningPool) UpdateBtcMiningPool(ctx *gin.Context) {
 		return
 	}
 
+	// 如果是备用矿池，找到对应的主矿池则添加，没有则报错
+	if data.PoolCategory == "备用矿池" {
+		exist, err := IsMasterPoolExist(data.PoolType, data.PoolName)
+		if err != nil {
+			this.Error(ctx, "查找对应的主矿池失败")
+			return
+		}
+		if !exist {
+			this.Error(ctx, "对应的主矿池不存在，请添加！")
+			return
+		}
+	}
+
 	err = updateBtcMiningPool(model.MiningPool{
 		ID:                  data.ID,
 		PoolName:            data.PoolName,
 		PoolType:            data.PoolType,
+		Country:             data.Country,
 		PoolCategory:        data.PoolCategory,
 		TheoreticalHashrate: hr,
 		Link:                data.Link,
@@ -171,6 +199,24 @@ func CreateBtcMiningSettlementRecord(data model.MiningSettlementRecord) error {
 func UpdateBtcMiningFBProfit(pool_id uint, date string, data float64) error {
 	return model.NewMiningSettlementRecord().Where("pool_id = ? AND settlement_date = ?", pool_id, date).
 		Update("settlement_profit_fb", data).Error
+}
+
+// 判断备用矿池的主矿池是否存在
+func IsMasterPoolExist(pool_type, pool_name string) (bool, error) {
+	var pool model.MiningPool
+	err := model.NewMiningPool().Where("pool_type = ? AND pool_category = ? AND pool_name = ?", pool_type, "主矿池", pool_name).First(&pool).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 未找到，说明不存在
+			return false, nil
+		}
+		// 其他错误
+		return false, err
+	}
+	if pool_type == pool.PoolType && pool_name == pool.PoolName {
+		return true, nil
+	}
+	return false, nil
 }
 
 // 判断某个日期是否存在
@@ -270,6 +316,7 @@ func (this *BtcMiningPool) ListBtcMiningPoolHashRate(ctx *gin.Context) {
 			Online:                  poolStatus.OnlineMachines,
 			Offline:                 poolStatus.OfflineMachines,
 			LastHashRate:            lastHash,
+			LastSettlementHashRate:  fmt.Sprintf("%.2f TH/s", settlementRecord.SettlementHashrate),
 			TheoreticalHashRate:     fmt.Sprintf("%.2f PH/s", miningPool.TheoreticalHashrate),
 			LastHashRateEffective:   effective,
 			LastSettlementProfitBtc: settlementRecord.SettlementProfitBtc,
@@ -304,4 +351,258 @@ func conversionHashRateEffective(lastSettlementHash, theoreticalHash float64) (s
 
 	// 返回转化率，格式化为字符串
 	return fmt.Sprintf("%.2f%%", conversionRate), nil
+}
+
+// overview
+
+func (this *BtcMiningPool) TotalRealTimeStatus(ctx *gin.Context) {
+	typ := ctx.Param("poolType")
+	if typ == "" {
+		this.Error(ctx, "类型不能为空")
+		return
+	}
+	var miningPools []model.MiningPool
+	err := model.NewMiningPool().Where("pool_type = ?", typ).Find(&miningPools).Error
+	if err != nil {
+		this.Error(ctx, "数据库获取失败")
+	}
+
+	var poolIDs []uint
+	for _, miningPool := range miningPools {
+		poolIDs = append(poolIDs, miningPool.ID)
+	}
+
+	// 计算半小时前的时间
+	halfHourAgo := time.Now().Add(-30 * time.Minute)
+
+	// 查询最新状态
+	var latestStatuses []model.MiningPoolStatus
+	// 使用子查询获取每个矿池最新状态的时间
+	subQuery := model.NewMiningPoolStatus().
+		Select("pool_id, MAX(last_update) AS latest_update").
+		Where("last_update >= ? AND pool_id IN (?)", halfHourAgo, poolIDs).
+		Group("pool_id")
+
+	// 根据子查询获取最新状态的详细信息
+	status := model.MiningPoolStatus{}
+	tableName := status.TableName()
+	err = model.NewMiningPoolStatus().
+		Table(tableName).
+		Joins("JOIN (?) AS latest ON "+tableName+".pool_id = latest.pool_id AND "+tableName+".last_update = latest.latest_update", subQuery).
+		Find(&latestStatuses).Error
+
+	if err != nil {
+		this.Error(ctx, "状态获取失败")
+		return
+	}
+
+	var (
+		totalCurrentHashrate       float64
+		totalMasterCurrentHashrate float64
+		totalBackUpCurrentHashrate float64
+		totalOnline                int
+		totalOffline               int
+	)
+
+	for _, status := range latestStatuses {
+		totalCurrentHashrate += status.CurrentHashrate
+		totalOnline += status.OnlineMachines
+		totalOffline += status.OfflineMachines
+
+		for _, miningPool := range miningPools {
+			if status.PoolID == miningPool.ID {
+				if miningPool.PoolCategory == "主矿池" {
+					totalMasterCurrentHashrate += status.CurrentHashrate
+				} else {
+					totalBackUpCurrentHashrate += status.CurrentHashrate
+				}
+			}
+		}
+	}
+
+	// 将结果打包成一个 map
+	result := map[string]any{
+		"totalCurrentHashRate":       fmt.Sprintf("%.2f", totalCurrentHashrate/1e15),
+		"totalMasterCurrentHashrate": fmt.Sprintf("%.2f", totalMasterCurrentHashrate/1e15),
+		"totalBackUpCurrentHashrate": fmt.Sprintf("%.2f", totalBackUpCurrentHashrate/1e15),
+		"totalOnline":                totalOnline,
+		"totalOffline":               totalOffline,
+	}
+
+	this.SuccessWithData(ctx, "获取成功", result)
+}
+
+func (this *BtcMiningPool) TotalLastDayStatus(ctx *gin.Context) {
+	typ := ctx.Param("poolType")
+	if typ == "" {
+		this.Error(ctx, "类型不能为空")
+		return
+	}
+	var miningPools []model.MiningPool
+	err := model.NewMiningPool().Where("pool_type = ?", typ).Find(&miningPools).Error
+	if err != nil {
+		this.Error(ctx, "数据库获取失败")
+	}
+
+	var poolIDs []uint
+	for _, miningPool := range miningPools {
+		poolIDs = append(poolIDs, miningPool.ID)
+	}
+
+	// 查询 SettlementDate 最大的日期
+	var maxSettlementDate string
+	err = model.NewMiningSettlementRecord().
+		Select("MAX(settlement_date)").
+		Where("pool_id IN ?", poolIDs).
+		Scan(&maxSettlementDate).Error
+
+	if err != nil || maxSettlementDate == "" {
+		this.Error(ctx, "获取最大结算日期失败")
+		return
+	}
+
+	// 查询所有 SettlementDate 等于最大日期的记录
+	var latestStatuses []model.MiningSettlementRecord
+	err = model.NewMiningSettlementRecord().
+		Where("settlement_date = ? AND pool_id IN ?", maxSettlementDate, poolIDs).
+		Find(&latestStatuses).Error
+
+	if err != nil {
+		this.Error(ctx, "状态获取失败")
+		return
+	}
+
+	var (
+		totalHash            float64
+		totalTheoreticalHash float64
+		totalProfitBtc       float64
+		totalMasterProfitBtc float64
+		totalBackUpProfitBtc float64
+		totalHashEfficiency  string
+	)
+
+	for _, status := range latestStatuses {
+		totalHash += status.SettlementHashrate // TH/s
+		totalProfitBtc += status.SettlementProfitBtc
+
+		for _, miningPool := range miningPools {
+			if miningPool.ID == status.PoolID && miningPool.PoolCategory == "主矿池" { // PH/s
+				totalTheoreticalHash += status.SettlementTheoreticalHashrate
+				totalMasterProfitBtc += status.SettlementProfitBtc
+			} else if miningPool.ID == status.PoolID && miningPool.PoolCategory == "备用矿池" {
+				totalBackUpProfitBtc += status.SettlementProfitBtc
+			}
+		}
+	}
+
+	if totalTheoreticalHash != 0 {
+		totalHashEfficiency = fmt.Sprintf("%.2f", 100*totalHash/(totalTheoreticalHash*1e3))
+	}
+
+	// 将结果打包成一个 map
+	result := map[string]any{
+		"lastSettlementDate":   maxSettlementDate,
+		"totalProfitBtc":       totalProfitBtc,
+		"totalMasterProfitBtc": totalMasterProfitBtc,
+		"totalBackUpProfitBtc": totalBackUpProfitBtc,
+		"totalHashEfficiency":  totalHashEfficiency,
+	}
+
+	this.SuccessWithData(ctx, "获取成功", result)
+}
+
+func (this *BtcMiningPool) TotalLastWeekStatus(ctx *gin.Context) {
+	typ := ctx.Param("poolType")
+	if typ == "" {
+		this.Error(ctx, "类型不能为空")
+		return
+	}
+	var miningPools []model.MiningPool
+	err := model.NewMiningPool().Where("pool_type = ?", typ).Find(&miningPools).Error
+	if err != nil {
+		this.Error(ctx, "数据库获取失败")
+		return
+	}
+
+	var poolIDs []uint
+	for _, miningPool := range miningPools {
+		poolIDs = append(poolIDs, miningPool.ID)
+	}
+
+	// 查询 SettlementDate 最大的日期
+	var maxSettlementDate string
+	err = model.NewMiningSettlementRecord().
+		Select("MAX(settlement_date)").
+		Where("pool_id IN ?", poolIDs).
+		Scan(&maxSettlementDate).Error
+
+	if err != nil || maxSettlementDate == "" {
+		this.Error(ctx, "获取最大结算日期失败")
+		return
+	}
+
+	// 计算从 maxSettlementDate 往前的七天的有效率
+	startDate, err := time.Parse("2006-01-02", maxSettlementDate)
+	if err != nil {
+		this.Error(ctx, "日期格式不正确")
+		return
+	}
+
+	efficiencys := make(map[string]float64)
+	var totalEfficiencys float64
+	for i := 0; i < 7; i++ {
+		date := startDate.AddDate(0, 0, -i).Format("2006-01-02")
+		efficiency, err := getOneDayHashEfficiency(miningPools, poolIDs, date)
+		if err != nil {
+			this.Error(ctx, err.Error())
+			return
+		}
+
+		totalEfficiencys += efficiency
+		efficiencys[date] = efficiency
+	}
+
+	averageEfficiency := totalEfficiencys / float64(len(efficiencys))
+	averageEfficiency = math.Round(averageEfficiency*100) / 100 // 保留两位小数
+
+	result := map[string]interface{}{
+		"efficiencys":       efficiencys,
+		"averageEfficiency": averageEfficiency,
+	}
+
+	this.SuccessWithData(ctx, "获取成功", result)
+}
+
+func getOneDayHashEfficiency(miningPools []model.MiningPool, poolIDs []uint, day string) (float64, error) {
+	// 查询所有 SettlementDate 等于最大日期的记录
+	var latestStatuses []model.MiningSettlementRecord
+	err := model.NewMiningSettlementRecord().
+		Where("settlement_date = ? AND pool_id IN ?", day, poolIDs).
+		Find(&latestStatuses).Error
+
+	if err != nil {
+		return 0, xerrors.Errorf("状态获取失败")
+	}
+
+	var (
+		totalHash            float64
+		totalTheoreticalHash float64
+		totalHashEfficiency  float64
+	)
+
+	for _, status := range latestStatuses {
+		totalHash += status.SettlementHashrate // TH/s
+
+		for _, miningPool := range miningPools {
+			if miningPool.ID == status.PoolID && miningPool.PoolCategory == "主矿池" { // PH/s
+				totalTheoreticalHash += status.SettlementTheoreticalHashrate
+			}
+		}
+	}
+
+	if totalTheoreticalHash != 0 {
+		totalHashEfficiency = 100 * totalHash / (totalTheoreticalHash * 1e3)
+		totalHashEfficiency = math.Round(totalHashEfficiency*100) / 100 // 保留两位小数
+	}
+	return totalHashEfficiency, nil
 }

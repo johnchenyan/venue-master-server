@@ -128,6 +128,7 @@ type BtcMiningPoolParam struct {
 	ID                  uint   `json:"ID"`
 	PoolName            string `json:"pool_name"`
 	PoolType            string `json:"pool_type"`
+	Country             string `json:"country"`
 	PoolCategory        string `json:"pool_category"`
 	TheoreticalHashrate string `json:"theoretical_hashrate"`
 	Link                string `json:"link"`
@@ -139,6 +140,7 @@ type BtcMiningPoolHashResult struct {
 	Online                  int     `json:"online"`
 	Offline                 int     `json:"offline"`
 	LastHashRate            string  `json:"last_hash"`
+	LastSettlementHashRate  string  `json:"last_settlement_hash"`
 	TheoreticalHashRate     string  `json:"theoretical"`
 	LastHashRateEffective   string  `json:"last_hash_rate_effective"`
 	LastSettlementProfitBtc float64 `json:"last_settlement_profit_btc"`

@@ -13,6 +13,7 @@ type MiningPool struct {
 	PoolCategory        string    `gorm:"column:pool_category;type:enum('主矿池', '备用矿池');not null" json:"pool_category"` // 矿池类别
 	TheoreticalHashrate float64   `gorm:"column:theoretical_hashrate;type:decimal(10,2)" json:"theoretical_hashrate"`  // 理论算力
 	Link                string    `gorm:"column:link;type:varchar(255)" json:"link"`                                   // 链接
+	Country             string    `gorm:"column:country;type:varchar(100)" json:"country"`                             // 所属地区
 	SortOrder           int       `gorm:"column:sort_order;type:int;default:0" json:"sort_order"`                      // 排序字段
 	IsEnabled           bool      `gorm:"column:is_enabled;type:tinyint(1);default:1" json:"is_enabled"`               // 启用状态
 	UpdatedAt           time.Time `gorm:"column:updated_at;type:timestamp;autoUpdateTime" json:"updated_at"`           // 更新时间
@@ -31,13 +32,14 @@ func NewMiningPool() *gorm.DB {
 
 // MiningSettlementRecord 表示矿池结算记录
 type MiningSettlementRecord struct {
-	ID                  uint      `gorm:"column:id;type:int;primaryKey;autoIncrement" json:"id"`                                 // 主键，自增ID
-	PoolID              uint      `gorm:"column:pool_id;type:int;not null" json:"pool_id"`                                       // 外键，关联到矿池表的 ID
-	SettlementDate      string    `gorm:"column:settlement_date;type:varchar(30);not null" json:"settlement_date"`               // 结算日期
-	SettlementHashrate  float64   `gorm:"column:settlement_hashrate;type:decimal(15,2);not null" json:"settlement_hashrate"`     // 结算算力
-	SettlementProfitBtc float64   `gorm:"column:settlement_profit_btc;type:decimal(15,8);not null" json:"settlement_profit_btc"` // 结算收益 BTC
-	SettlementProfitFb  float64   `gorm:"column:settlement_profit_fb;type:decimal(15,2);not null" json:"settlement_profit_fb"`   // 结算算力 FB
-	CreatedAt           time.Time `gorm:"column:created_at;type:timestamp;autoCreateTime" json:"created_at"`                     // 创建时间
+	ID                            uint      `gorm:"column:id;type:int;primaryKey;autoIncrement" json:"id"`                                            // 主键，自增ID
+	PoolID                        uint      `gorm:"column:pool_id;type:int;not null" json:"pool_id"`                                                  // 外键，关联到矿池表的 ID
+	SettlementDate                string    `gorm:"column:settlement_date;type:varchar(30);not null" json:"settlement_date"`                          // 结算日期
+	SettlementHashrate            float64   `gorm:"column:settlement_hashrate;type:decimal(15,2);not null" json:"settlement_hashrate"`                // 结算算力
+	SettlementTheoreticalHashrate float64   `gorm:"column:settlement_theoretical_hashrate;type:decimal(10,2)" json:"settlement_theoretical_hashrate"` // 理论算力
+	SettlementProfitBtc           float64   `gorm:"column:settlement_profit_btc;type:decimal(15,8);not null" json:"settlement_profit_btc"`            // 结算收益 BTC
+	SettlementProfitFb            float64   `gorm:"column:settlement_profit_fb;type:decimal(15,2);not null" json:"settlement_profit_fb"`              // 结算算力 FB
+	CreatedAt                     time.Time `gorm:"column:created_at;type:timestamp;autoCreateTime" json:"created_at"`                                // 创建时间
 }
 
 // TableName 设置表名，带前缀

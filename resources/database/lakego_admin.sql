@@ -224,6 +224,7 @@ CREATE TABLE pre__mining_pools (
                               pool_name VARCHAR(255) NOT NULL,  -- 账户名
                               theoretical_hashrate DECIMAL(10, 2),  -- 理论算力
                               link VARCHAR(255),                     -- 链接
+                              country VARCHAR(100),                     -- 所属地区
                               `sort_order` INT DEFAULT 0,                                  -- 排序字段，默认为0
                               `is_enabled` TINYINT(1) DEFAULT 1,                           -- 启用状态，默认为1（启用）
                               updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- 更新时间
@@ -235,6 +236,7 @@ CREATE TABLE pre__mining_settlement_records (
                                          pool_id INT NOT NULL,                              -- 外键，关联到 pre__mining_pools 表的 id
                                          settlement_date VARCHAR(30) NOT NULL,                     -- 结算日期
                                          settlement_hashrate DECIMAL(15, 2) NOT NULL,      -- 结算算力
+                                         settlement_theoretical_hashrate DECIMAL(10, 2),  -- 结算时理论算力
                                          settlement_profit_btc DECIMAL(15, 8) NOT NULL,    -- 结算收益 BTC
                                          settlement_profit_fb DECIMAL(15, 8) NOT NULL,   -- 结算算力 FB
                                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,    -- 创建时间

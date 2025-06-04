@@ -216,4 +216,9 @@ func BTCMiningPoolRoutes(engine router.IRouter) {
 	engine.POST("/miningPool/updateBtcMiningPool", btcMiningPoolController.UpdateBtcMiningPool)
 
 	engine.GET("/miningPool/listBtcMiningPoolHashRate/:poolType/:poolCategory", btcMiningPoolController.ListBtcMiningPoolHashRate)
+
+	// overview
+	engine.GET("/miningPool/getTotalRealTimeStatus/:poolType", btcMiningPoolController.TotalRealTimeStatus)
+	engine.GET("/miningPool/getTotalLastDayStatus/:poolType", btcMiningPoolController.TotalLastDayStatus)
+	engine.GET("/miningPool/getTotalLastWeekStatus/:poolType", btcMiningPoolController.TotalLastWeekStatus)
 }

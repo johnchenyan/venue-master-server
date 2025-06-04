@@ -146,11 +146,12 @@ func processBTCProfit(miningPool model.MiningPool) error {
 		}
 
 		err = controller.CreateBtcMiningSettlementRecord(model.MiningSettlementRecord{
-			PoolID:              miningPool.ID,
-			SettlementDate:      date,
-			SettlementHashrate:  hash,
-			SettlementProfitBtc: btcRecv,
-			SettlementProfitFb:  0,
+			PoolID:                        miningPool.ID,
+			SettlementDate:                date,
+			SettlementTheoreticalHashrate: miningPool.TheoreticalHashrate,
+			SettlementHashrate:            hash,
+			SettlementProfitBtc:           btcRecv,
+			SettlementProfitFb:            0,
 		})
 		if err != nil {
 			fmt.Printf("CreateBtcMiningSettlementRecord name: %v failed：%v\n", miningPool.PoolName, err)
