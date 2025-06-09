@@ -356,6 +356,13 @@ func conversionHashRateEffective(lastSettlementHash, theoreticalHash float64) (s
 // overview
 
 func (this *BtcMiningPool) TotalRealTimeStatus(ctx *gin.Context) {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Printf("TotalRealTimeStatus 程序发生了未捕获的错误: %v\n", err)
+			// 记录错误或采取其他行动
+		}
+	}()
+
 	typ := ctx.Param("poolType")
 	if typ == "" {
 		this.Error(ctx, "类型不能为空")
@@ -499,6 +506,8 @@ func (this *BtcMiningPool) TotalLastDayStatus(ctx *gin.Context) {
 		totalHashEfficiency = fmt.Sprintf("%.2f", 100*totalHash/(totalTheoreticalHash*1e3))
 	}
 
+	totalProfitBtc = math.Round(totalProfitBtc*1e8) / 1e8 // 保留8位小数
+
 	// 将结果打包成一个 map
 	result := map[string]any{
 		"lastSettlementDate":   maxSettlementDate,
@@ -511,7 +520,25 @@ func (this *BtcMiningPool) TotalLastDayStatus(ctx *gin.Context) {
 	this.SuccessWithData(ctx, "获取成功", result)
 }
 
+type DailyEfficiency struct {
+	Date       string  `json:"date"`
+	Efficiency float64 `json:"efficiency"`
+}
+
+type EfficiencyResponse struct {
+	Efficiencies      []DailyEfficiency `json:"efficiencys"`
+	AverageEfficiency float64           `json:"averageEfficiency"`
+}
+
 func (this *BtcMiningPool) TotalLastWeekStatus(ctx *gin.Context) {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Printf("TotalLastWeekStatus 程序发生了未捕获的错误: %v\n", err)
+			// 记录错误或采取其他行动
+		}
+	}()
+
+	fmt.Printf("TotalLastWeekStatus: ctx address: %p\n", ctx)
 	typ := ctx.Param("poolType")
 	if typ == "" {
 		this.Error(ctx, "类型不能为空")
@@ -548,8 +575,8 @@ func (this *BtcMiningPool) TotalLastWeekStatus(ctx *gin.Context) {
 		return
 	}
 
-	efficiencys := make(map[string]float64)
-	var totalEfficiencys float64
+	var efficiencies []DailyEfficiency
+	var totalEfficiency float64
 	for i := 0; i < 7; i++ {
 		date := startDate.AddDate(0, 0, -i).Format("2006-01-02")
 		efficiency, err := getOneDayHashEfficiency(miningPools, poolIDs, date)
@@ -558,19 +585,103 @@ func (this *BtcMiningPool) TotalLastWeekStatus(ctx *gin.Context) {
 			return
 		}
 
-		totalEfficiencys += efficiency
-		efficiencys[date] = efficiency
+		totalEfficiency += efficiency
+		efficiencies = append(efficiencies, DailyEfficiency{
+			Date:       date,
+			Efficiency: efficiency,
+		})
 	}
 
-	averageEfficiency := totalEfficiencys / float64(len(efficiencys))
+	averageEfficiency := totalEfficiency / float64(len(efficiencies))
 	averageEfficiency = math.Round(averageEfficiency*100) / 100 // 保留两位小数
 
-	result := map[string]interface{}{
-		"efficiencys":       efficiencys,
-		"averageEfficiency": averageEfficiency,
+	response := EfficiencyResponse{
+		Efficiencies:      efficiencies,
+		AverageEfficiency: averageEfficiency,
 	}
 
-	this.SuccessWithData(ctx, "获取成功", result)
+	this.SuccessWithData(ctx, "获取成功", response)
+}
+
+func (this *BtcMiningPool) LastestHashRateEfficiency(ctx *gin.Context) {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Printf("LastestHashRateEfficiency 程序发生了未捕获的错误: %v\n", err)
+			// 记录错误或采取其他行动
+		}
+	}()
+
+	fmt.Printf("LastestHashRateEfficiency: ctx address: %p\n", ctx)
+
+	typ := ctx.Param("poolType")
+	if typ == "" {
+		this.Error(ctx, "类型不能为空")
+		return
+	}
+	dayStr := ctx.Param("day")
+	if dayStr == "" {
+		this.Error(ctx, "时间不能为空")
+		return
+	}
+	var miningPools []model.MiningPool
+	err := model.NewMiningPool().Where("pool_type = ?", typ).Find(&miningPools).Error
+	if err != nil {
+		this.Error(ctx, "数据库获取失败")
+		return
+	}
+
+	var poolIDs []uint
+	for _, miningPool := range miningPools {
+		poolIDs = append(poolIDs, miningPool.ID)
+	}
+
+	day, err := strconv.ParseInt(dayStr, 10, 64)
+	if err != nil {
+		this.Error(ctx, "时间转换失败")
+		return
+	}
+
+	// 查询 SettlementDate 最大的日期
+	var maxSettlementDate string
+	err = model.NewMiningSettlementRecord().
+		Select("MAX(settlement_date)").
+		Where("pool_id IN ?", poolIDs).
+		Scan(&maxSettlementDate).Error
+
+	if err != nil || maxSettlementDate == "" {
+		this.Error(ctx, "获取最大结算日期失败")
+		return
+	}
+
+	// 计算从 maxSettlementDate 往前的七天的有效率
+	startDate, err := time.Parse("2006-01-02", maxSettlementDate)
+	if err != nil {
+		this.Error(ctx, "日期格式不正确")
+		return
+	}
+
+	var efficiencies []struct {
+		Date       string  `json:"date"`
+		Efficiency float64 `json:"efficiency"`
+	}
+	for i := 0; i < int(day); i++ {
+		date := startDate.AddDate(0, 0, -i).Format("2006-01-02")
+		efficiency, err := getOneDayHashEfficiency(miningPools, poolIDs, date)
+		if err != nil {
+			this.Error(ctx, err.Error())
+			return
+		}
+
+		efficiencies = append(efficiencies, struct {
+			Date       string  `json:"date"`
+			Efficiency float64 `json:"efficiency"`
+		}{
+			Date:       date,
+			Efficiency: efficiency,
+		})
+	}
+
+	this.SuccessWithData(ctx, "获取成功", efficiencies)
 }
 
 func getOneDayHashEfficiency(miningPools []model.MiningPool, poolIDs []uint, day string) (float64, error) {
@@ -605,4 +716,99 @@ func getOneDayHashEfficiency(miningPools []model.MiningPool, poolIDs []uint, day
 		totalHashEfficiency = math.Round(totalHashEfficiency*100) / 100 // 保留两位小数
 	}
 	return totalHashEfficiency, nil
+}
+
+func (this *BtcMiningPool) LastestHashRate(ctx *gin.Context) {
+	typ := ctx.Param("poolType")
+	if typ == "" {
+		this.Error(ctx, "类型不能为空")
+		return
+	}
+	dayStr := ctx.Param("day")
+	if dayStr == "" {
+		this.Error(ctx, "时间不能为空")
+		return
+	}
+	var miningPools []model.MiningPool
+	err := model.NewMiningPool().Where("pool_type = ?", typ).Find(&miningPools).Error
+	if err != nil {
+		this.Error(ctx, "数据库获取失败")
+		return
+	}
+
+	var poolIDs []uint
+	for _, miningPool := range miningPools {
+		poolIDs = append(poolIDs, miningPool.ID)
+	}
+
+	day, err := strconv.ParseInt(dayStr, 10, 64)
+	if err != nil {
+		this.Error(ctx, "时间转换失败")
+		return
+	}
+
+	// 查询 SettlementDate 最大的日期
+	var maxSettlementDate string
+	err = model.NewMiningSettlementRecord().
+		Select("MAX(settlement_date)").
+		Where("pool_id IN ?", poolIDs).
+		Scan(&maxSettlementDate).Error
+
+	if err != nil || maxSettlementDate == "" {
+		this.Error(ctx, "获取最大结算日期失败")
+		return
+	}
+
+	// 计算从 maxSettlementDate 往前的七天的有效率
+	startDate, err := time.Parse("2006-01-02", maxSettlementDate)
+	if err != nil {
+		this.Error(ctx, "日期格式不正确")
+		return
+	}
+
+	var DayHashRates []struct {
+		Date        string  `json:"date"`
+		DayHashRate float64 `json:"day_hash_rate"`
+	}
+	for i := 0; i < int(day); i++ {
+		date := startDate.AddDate(0, 0, -i).Format("2006-01-02")
+		hash, err := getOneDayHash(miningPools, poolIDs, date)
+		if err != nil {
+			this.Error(ctx, err.Error())
+			return
+		}
+
+		DayHashRates = append(DayHashRates, struct {
+			Date        string  `json:"date"`
+			DayHashRate float64 `json:"day_hash_rate"`
+		}{
+			Date:        date,
+			DayHashRate: hash,
+		})
+	}
+
+	this.SuccessWithData(ctx, "获取成功", DayHashRates)
+}
+
+func getOneDayHash(miningPools []model.MiningPool, poolIDs []uint, day string) (float64, error) {
+	// 查询所有 SettlementDate 等于最大日期的记录
+	var latestStatuses []model.MiningSettlementRecord
+	err := model.NewMiningSettlementRecord().
+		Where("settlement_date = ? AND pool_id IN ?", day, poolIDs).
+		Find(&latestStatuses).Error
+
+	if err != nil {
+		return 0, xerrors.Errorf("状态获取失败")
+	}
+
+	var totalHash float64
+
+	for _, status := range latestStatuses {
+		totalHash += status.SettlementHashrate // TH/s
+	}
+
+	totalHash = totalHash / 1e3
+	totalHash = math.Round(totalHash*100) / 100
+
+	return totalHash, nil
 }

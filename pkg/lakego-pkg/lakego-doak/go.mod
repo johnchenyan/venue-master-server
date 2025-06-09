@@ -12,7 +12,7 @@ require (
 	github.com/deatil/go-validator v0.0.3 // indirect
 	github.com/deatil/lakego-jwt v0.0.3
 	github.com/fsnotify/fsnotify v1.5.1
-	github.com/gin-gonic/gin v1.8.2
+	github.com/gin-gonic/gin v1.10.1
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
 	github.com/go-playground/validator/v10 v10.9.0
