@@ -215,6 +215,8 @@ func BTCMiningPoolRoutes(engine router.IRouter) {
 
 	engine.POST("/miningPool/updateBtcMiningPool", btcMiningPoolController.UpdateBtcMiningPool)
 
+	engine.DELETE("/miningPool/deleteBtcMiningPool/:miningPoolId", btcMiningPoolController.DeleteBtcMiningPool)
+
 	engine.GET("/miningPool/listBtcMiningPoolHashRate/:poolType/:poolCategory", btcMiningPoolController.ListBtcMiningPoolHashRate)
 
 	// overview

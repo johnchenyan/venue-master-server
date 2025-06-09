@@ -66,25 +66,38 @@ func (this *BtcMiningPool) CreateBtcMiningPool(ctx *gin.Context) {
 	}
 
 	// 如果是备用矿池，找到对应的主矿池则添加，没有则报错
-	if data.PoolCategory == "备用矿池" {
-		exist, err := IsMasterPoolExist(data.PoolType, data.PoolName)
-		if err != nil {
-			this.Error(ctx, "查找对应的主矿池失败")
-			return
-		}
-		if !exist {
-			this.Error(ctx, "对应的主矿池不存在，请添加！")
-			return
-		}
-	}
+	//if data.PoolCategory == "备用矿池" {
+	//	exist, err := IsMasterPoolExist(data.PoolType, data.PoolName)
+	//	if err != nil {
+	//		this.Error(ctx, "查找对应的主矿池失败")
+	//		return
+	//	}
+	//	if !exist {
+	//		this.Error(ctx, "对应的主矿池不存在，请添加！")
+	//		return
+	//	}
+	//}
 
 	bp, err := createBtcMiningPool(model.MiningPool{
 		PoolName:            data.PoolName,
 		PoolType:            data.PoolType,
 		Country:             data.Country,
-		PoolCategory:        data.PoolCategory,
+		PoolCategory:        "主矿池",
 		TheoreticalHashrate: hr,
-		Link:                data.Link,
+		Link:                data.MasterLink,
+	})
+	if err != nil {
+		this.Error(ctx, "新增矿池失败")
+		return
+	}
+
+	_, err = createBtcMiningPool(model.MiningPool{
+		PoolName:            data.PoolName,
+		PoolType:            data.PoolType,
+		Country:             data.Country,
+		PoolCategory:        "备用矿池",
+		TheoreticalHashrate: hr,
+		Link:                data.BackupLink,
 	})
 	if err != nil {
 		this.Error(ctx, "新增矿池失败")
@@ -120,7 +133,7 @@ func (this *BtcMiningPool) CreateBtcMiningPool(ctx *gin.Context) {
 }
 
 func (this *BtcMiningPool) UpdateBtcMiningPool(ctx *gin.Context) {
-	var data BtcMiningPoolParam
+	var data BtcMiningPoolUpdateParam
 	if err := this.ShouldBindJSON(ctx, &data); err != nil {
 		this.Error(ctx, "请求数据不正确")
 		return
@@ -162,6 +175,34 @@ func (this *BtcMiningPool) UpdateBtcMiningPool(ctx *gin.Context) {
 	this.Success(ctx, "新增矿池成功！")
 }
 
+// DeleteCustodyInfo 删除托管信息
+func (this *BtcMiningPool) DeleteBtcMiningPool(ctx *gin.Context) {
+	miningPoolId := ctx.Param("miningPoolId")
+	if miningPoolId == "" {
+		this.Error(ctx, "矿池ID不能为空")
+		return
+	}
+
+	// 根据记录ID删除对应的删除记录数据
+	// 先删除统计信息
+	if err := deleteMiningPoolStatus(miningPoolId); err != nil {
+		this.Error(ctx, "删除矿池实时信息失败")
+		return
+	}
+
+	if err := deleteMiningSettlement(miningPoolId); err != nil {
+		this.Error(ctx, "删除矿池结算数据失败")
+		return
+	}
+
+	if err := deleteMiningPool(miningPoolId); err != nil {
+		this.Error(ctx, "删除矿池数据失败")
+		return
+	}
+
+	this.Success(ctx, "删除记录成功！")
+}
+
 func ListBtcMiningPool() ([]model.MiningPool, error) {
 	var miningPools []model.MiningPool
 	err := model.NewMiningPool().Find(&miningPools).Error
@@ -182,6 +223,7 @@ func updateBtcMiningPool(data model.MiningPool) error {
 		"pool_name":            data.PoolName,
 		"pool_type":            data.PoolType,
 		"pool_category":        data.PoolCategory,
+		"country":              data.Country,
 		"theoretical_hashrate": data.TheoreticalHashrate,
 		"link":                 data.Link,
 	}
@@ -811,4 +853,16 @@ func getOneDayHash(miningPools []model.MiningPool, poolIDs []uint, day string) (
 	totalHash = math.Round(totalHash*100) / 100
 
 	return totalHash, nil
+}
+
+func deleteMiningPoolStatus(miningPoolID string) error {
+	return model.NewMiningPoolStatus().Where("pool_id = ?", miningPoolID).Delete(&model.MiningPoolStatus{}).Error
+}
+
+func deleteMiningSettlement(miningPoolID string) error {
+	return model.NewMiningSettlementRecord().Where("pool_id = ?", miningPoolID).Delete(&model.MiningSettlementRecord{}).Error
+}
+
+func deleteMiningPool(miningPoolID string) error {
+	return model.NewMiningPool().Where("id = ?", miningPoolID).Delete(&model.MiningPool{}).Error
 }

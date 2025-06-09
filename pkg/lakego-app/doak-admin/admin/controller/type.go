@@ -125,7 +125,18 @@ type SettlementQueryAverageResultT struct {
 
 // btc mining pool
 type BtcMiningPoolParam struct {
-	ID                  uint   `json:"ID"`
+	ID       uint   `json:"id"`
+	PoolName string `json:"pool_name"`
+	PoolType string `json:"pool_type"`
+	Country  string `json:"country"`
+	//PoolCategory        string `json:"pool_category"`
+	TheoreticalHashrate string `json:"theoretical_hashrate"`
+	MasterLink          string `json:"master_link"`
+	BackupLink          string `json:"backup_link"`
+}
+
+type BtcMiningPoolUpdateParam struct {
+	ID                  uint   `json:"id"`
 	PoolName            string `json:"pool_name"`
 	PoolType            string `json:"pool_type"`
 	Country             string `json:"country"`
